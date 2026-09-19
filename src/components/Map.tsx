@@ -47,11 +47,22 @@ const createCustomPin = (place: Place, isSelected: boolean) => {
   });
 };
 
-// フィルター変更時に地図の表示範囲（Bounds）を自動調整する補助コンポーネント
-const MapAutoBounds: React.FC<{ places: Place[] }> = ({ places }) => {
+// フィルター変更または店舗選択時に地図の表示範囲・中心を自動調整する補助コンポーネント
+const MapAutoBounds: React.FC<{ places: Place[]; selectedPlaceId?: string | null }> = ({
+  places,
+  selectedPlaceId,
+}) => {
   const map = useMap();
 
   useEffect(() => {
+    if (selectedPlaceId) {
+      const target = places.find((p) => p.id === selectedPlaceId);
+      if (target?.latitude && target?.longitude) {
+        map.flyTo([target.latitude, target.longitude], 16, { duration: 1.0 });
+        return;
+      }
+    }
+
     if (places.length === 0) return;
 
     if (places.length === 1 && places[0].latitude && places[0].longitude) {
@@ -72,7 +83,7 @@ const MapAutoBounds: React.FC<{ places: Place[] }> = ({ places }) => {
         maxZoom: 16,
       });
     }
-  }, [places, map]);
+  }, [places, selectedPlaceId, map]);
 
   return null;
 };
@@ -103,7 +114,7 @@ export const Map: React.FC<MapProps> = ({ places, selectedPlaceId }) => {
           maxZoom={19}
         />
 
-        <MapAutoBounds places={validPlaces} />
+        <MapAutoBounds places={validPlaces} selectedPlaceId={selectedPlaceId} />
 
         {validPlaces.map((place) => (
           <Marker
