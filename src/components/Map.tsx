@@ -12,38 +12,177 @@ interface MapProps {
   selectedPlaceId?: string | null;
 }
 
-// ジャンル別アイコン絵文字の定義
-const getGenreIcon = (genre?: string) => {
-  if (!genre) return "📍";
-  if (genre.includes("カフェ") || genre.includes("喫茶") || genre.includes("珈琲")) return "☕";
-  if (genre.includes("ラーメン")) return "🍜";
-  if (genre.includes("イタリアン") || genre.includes("ピザ") || genre.includes("パスタ")) return "🍕";
-  if (genre.includes("居酒屋") || genre.includes("バー")) return "🍺";
-  if (genre.includes("和食") || genre.includes("寿司")) return "🍣";
-  if (genre.includes("中華") || genre.includes("餃子")) return "🥟";
-  if (genre.includes("焼肉") || genre.includes("ステーキ")) return "🥩";
-  return "🍴";
+// ジャンル別のカラーパレット & ベクターアイコン定義 (Apple / Google Maps スタイル)
+interface GenreStyle {
+  topColor: string;
+  bottomColor: string;
+  iconSvg: string;
+}
+
+const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
+  // ヴィーガン対応店舗は爽やかなエメラルドグリーンを最優先
+  if (isVegan) {
+    return {
+      topColor: "#10B981",
+      bottomColor: "#047857",
+      iconSvg: `
+        <path d="M14 2C9 2 5 6 5 11c0 2 .5 3.5 1.5 4.5C5.5 14.5 2 11 2 7c0 0 0-3 3-4 0 0-3 5 0 9 0 0 2-4 7-6 1.5-.6 2-4 2-4z" fill="currentColor"/>
+        <path d="M14 2c-1 4-3 7-7.5 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      `,
+    };
+  }
+
+  const g = genre || "";
+
+  // カフェ・喫茶: 芳醇なアンバー＆エスプレッソブラウン
+  if (g.includes("カフェ") || g.includes("喫茶") || g.includes("珈琲")) {
+    return {
+      topColor: "#D97706",
+      bottomColor: "#92400E",
+      iconSvg: `
+        <path d="M13 6H2a1 1 0 00-1 1v4a4 4 0 004 4h3a4 4 0 004-4V7a1 1 0 00-1-1zm-1 5a2 2 0 01-2 2H5a2 2 0 01-2-2V8h7v3zm3-3h-1v3h1a1.5 1.5 0 000-3zM2 17h11a1 1 0 010 2H2a1 1 0 010-2z" fill="currentColor"/>
+        <path d="M4.5 1c.5 1-.5 2 0 3M7.5 1c.5 1-.5 2 0 3M10.5 1c.5 1-.5 2 0 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      `,
+    };
+  }
+
+  // イタリアン・ピザ・パスタ: トスカーナワイン＆クリムゾンレッド
+  if (g.includes("イタリアン") || g.includes("ピザ") || g.includes("パスタ") || g.includes("フレンチ")) {
+    return {
+      topColor: "#E11D48",
+      bottomColor: "#9F1239",
+      iconSvg: `
+        <path d="M8 1C4.5 1 2.2 2.2 1 3c.6 1.8 7 14 7 14s6.4-12.2 7-14c-1.2-.8-3.5-2-7-2zm-3.5 3.2c1-.4 2.3-.7 3.5-.7s2.5.3 3.5.7l-3.5 7-3.5-7z" fill="currentColor"/>
+        <circle cx="8" cy="6" r="1.1" fill="currentColor"/>
+        <circle cx="6.2" cy="8.6" r="0.9" fill="currentColor"/>
+        <circle cx="9.8" cy="8.6" r="0.9" fill="currentColor"/>
+      `,
+    };
+  }
+
+  // ラーメン・つけ麺: サンセットオレンジ＆温かなスープ
+  if (g.includes("ラーメン") || g.includes("拉麺") || g.includes("麺")) {
+    return {
+      topColor: "#EA580C",
+      bottomColor: "#9A3412",
+      iconSvg: `
+        <path d="M2 7a6 6 0 0012 0H2z" fill="currentColor"/>
+        <path d="M5 13.5h6v1.2H5vz" fill="currentColor"/>
+        <path d="M1 5.5l14-2.5M1 7.2l14-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M4.5 1.5c.5.8-.5 1.5 0 2.2M8 1.5c.5.8-.5 1.5 0 2.2M11.5 1.5c.5.8-.5 1.5 0 2.2" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+      `,
+    };
+  }
+
+  // 和食・寿司: 伝統の藍色＆オーシャンネイビー
+  if (g.includes("和食") || g.includes("寿司") || g.includes("鮨") || g.includes("海鮮")) {
+    return {
+      topColor: "#2563EB",
+      bottomColor: "#1E3A8A",
+      iconSvg: `
+        <rect x="2" y="7" width="12" height="6" rx="3" fill="currentColor" opacity="0.35"/>
+        <path d="M1 7c0-2.5 3-4 7-4s7 1.5 7 4-3 2.5-7 2.5S1 9.5 1 7z" fill="currentColor"/>
+        <rect x="7" y="4" width="2" height="9" fill="currentColor"/>
+      `,
+    };
+  }
+
+  // 居酒屋・バー: ロイヤルバイオレット＆カクテルパープル
+  if (g.includes("居酒屋") || g.includes("バー") || g.includes("酒")) {
+    return {
+      topColor: "#8B5CF6",
+      bottomColor: "#5B21B6",
+      iconSvg: `
+        <path d="M3 3h10l-4 6v4h3v2H4v-2h3V9L3 3zm2.5 2l2.5 3.8L10.5 5h-5z" fill="currentColor"/>
+        <circle cx="11.5" cy="2" r="1.3" fill="currentColor"/>
+      `,
+    };
+  }
+
+  // 焼肉・ステーキ: 熟成ルビー＆チャコールレッド
+  if (g.includes("焼肉") || g.includes("ステーキ") || g.includes("肉")) {
+    return {
+      topColor: "#DC2626",
+      bottomColor: "#7F1D1D",
+      iconSvg: `
+        <path d="M8 1c.5 1.5-.5 2.5 0 4 1.5-1 2-2 2-2s1 2.5.5 4c1-.5 1.5-1.5 1.5-1.5s.5 2-.5 3.5C10 11 9 12 8 12s-3-1-3.5-3c-1 1.5-.5 3.5-.5 3.5s-.5-2 .5-4c0 0 .5 1 1.5 1.5-.5-1.5 0-4 .5-4s-.5 1 0 2c.5-1.5 1-2.5 1-3.5z" fill="currentColor"/>
+        <rect x="3" y="13" width="10" height="2" rx="1" fill="currentColor"/>
+      `,
+    };
+  }
+
+  // 中華・点心: ウォームコーラル
+  if (g.includes("中華") || g.includes("餃子") || g.includes("飲茶")) {
+    return {
+      topColor: "#F43F5E",
+      bottomColor: "#BE123C",
+      iconSvg: `
+        <path d="M8 2C4.5 2 2 4.5 2 7c0 3 2.5 5 6 5s6-2 6-5c0-2.5-2.5-5-6-5zm0 1.5c1.5 0 3 .8 3.5 2h-7C5 4.3 6.5 3.5 8 3.5z" fill="currentColor"/>
+        <path d="M1 13h14v2H1z" fill="currentColor" opacity="0.6"/>
+      `,
+    };
+  }
+
+  // デフォルト / その他: モダンインディゴ & スプーンフォーク
+  return {
+    topColor: "#4F46E5",
+    bottomColor: "#312E81",
+    iconSvg: `
+      <path d="M4 1v4a2 2 0 002 2v8h2V7a2 2 0 002-2V1H9v3H7V1H4zm7 0c-1.5 0-2.5 1.5-2.5 3.5S9.5 8 11 8v7h2V1h-2z" fill="currentColor"/>
+    `,
+  };
 };
 
-// スタイリッシュなピン用 DivIcon の生成
+// スタイリッシュなSVGティアドロップピンの生成
 const createCustomPin = (place: Place, isSelected: boolean) => {
-  const emoji = getGenreIcon(place.genre);
-  const bgColor = place.isVegan ? "bg-emerald-600" : isSelected ? "bg-rose-600" : "bg-blue-600";
-  const ring = isSelected ? "ring-4 ring-rose-400/50 scale-125" : "ring-2 ring-white shadow-lg";
+  const style = getGenreStyle(place.genre, place.isVegan);
+  const pinId = `pin-${place.id.replace(/[^a-zA-Z0-9]/g, "")}`;
+
+  const transformClass = isSelected
+    ? "scale-125 -translate-y-1 filter drop-shadow-xl z-50 animate-bounce duration-1000"
+    : "hover:scale-115 hover:-translate-y-1 transition-all duration-200";
+
+  const pulseRing = isSelected
+    ? `<circle cx="19" cy="18" r="18" stroke="${style.topColor}" stroke-width="3" stroke-opacity="0.6" fill="none" class="animate-ping"/>`
+    : "";
+
+  const svgHtml = `
+    <div class="relative flex items-center justify-center cursor-pointer ${transformClass}">
+      <svg width="38" height="48" viewBox="0 0 38 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="filter drop-shadow-md">
+        <defs>
+          <linearGradient id="grad-${pinId}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${style.topColor}"/>
+            <stop offset="100%" stop-color="${style.bottomColor}"/>
+          </linearGradient>
+        </defs>
+
+        ${pulseRing}
+
+        <!-- 外枠ティアドロップシェイプ -->
+        <path
+          d="M19 0C8.50659 0 0 8.50659 0 19C0 30.5 15 44.5 18.2 47.3C18.7 47.7 19.3 47.7 19.8 47.3C23 44.5 38 30.5 38 19C38 8.50659 29.4934 0 19 0Z"
+          fill="url(#grad-${pinId})"
+        />
+
+        <!-- 白抜きインナーサークル -->
+        <circle cx="19" cy="18" r="12" fill="#FFFFFF" class="shadow-inner"/>
+
+        <!-- ジャンル別ベクターシルエットアイコン -->
+        <g transform="translate(11, 10)" style="color: ${style.topColor}">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            ${style.iconSvg}
+          </svg>
+        </g>
+      </svg>
+    </div>
+  `;
 
   return L.divIcon({
     className: "!bg-transparent !border-0",
-    html: `
-      <div class="relative flex items-center justify-center cursor-pointer transition-transform duration-200 hover:scale-110">
-        <div class="flex items-center justify-center w-8 h-8 rounded-full ${bgColor} ${ring} text-white shadow-md">
-          <span class="text-sm leading-none">${emoji}</span>
-        </div>
-        <div class="absolute -bottom-1 w-2 h-2 ${bgColor} rotate-45"></div>
-      </div>
-    `,
-    iconSize: [32, 36],
-    iconAnchor: [16, 36],
-    popupAnchor: [0, -36],
+    html: svgHtml,
+    iconSize: [38, 48],
+    iconAnchor: [19, 48],
+    popupAnchor: [0, -48],
   });
 };
 
