@@ -132,14 +132,45 @@ export async function GET() {
         const closeHour = props["閉店時間"]?.number ?? undefined;
 
         // 10. 食事対応 / ビーガン・ベジタリアン
-        const dietaryList: string[] =
-          props["食事対応"]?.multi_select?.map((o: { name: string }) => o.name) || [];
-        const isVeganCheckbox = props["ビーガン対応"]?.checkbox ?? false;
+        const dietaryList: string[] = [
+          ...(props["食事対応"]?.multi_select?.map((o: { name: string }) => o.name) || []),
+          ...(props["ヴィーガン・ベジタリアン"]?.multi_select?.map((o: { name: string }) => o.name) || []),
+        ];
+        const veganSelectName =
+          props["ヴィーガン・ベジタリアン"]?.select?.name ||
+          props["ビーガン・ベジタリアン"]?.select?.name ||
+          props["食事対応"]?.select?.name ||
+          "";
+        if (veganSelectName) {
+          dietaryList.push(veganSelectName);
+        }
+
+        const isVeganCheckbox =
+          props["ビーガン対応"]?.checkbox ??
+          props["ヴィーガン対応"]?.checkbox ??
+          props["ヴィーガン"]?.checkbox ??
+          props["ビーガン"]?.checkbox ??
+          false;
+
         const isVegan =
           isVeganCheckbox ||
-          dietaryList.some((d) => d.includes("ビーガン") || d.includes("ヴィーガン"));
+          dietaryList.some(
+            (d) =>
+              (d.includes("ビーガン") || d.includes("ヴィーガン") || d.toLowerCase().includes("vegan")) &&
+              !d.includes("非対応") &&
+              !d.includes("不明") &&
+              !d.includes("なし")
+          );
+
         const isVegetarian =
-          isVegan || dietaryList.some((d) => d.includes("ベジタリアン"));
+          isVegan ||
+          dietaryList.some(
+            (d) =>
+              (d.includes("ベジタリアン") || d.toLowerCase().includes("vegetarian")) &&
+              !d.includes("非対応") &&
+              !d.includes("不明") &&
+              !d.includes("なし")
+          );
 
         // 11. 駐車場
         let parking: string[] = [];
