@@ -34,14 +34,13 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
 
   const g = genre || "";
 
-  // カフェ・喫茶: 芳醇なアンバー＆エスプレッソブラウン
+  // カフェ・喫茶: 芳醇なアンバー＆エスプレッソブラウン（coffee.pngアイコンを使用）
   if (g.includes("カフェ") || g.includes("喫茶") || g.includes("珈琲")) {
     return {
       topColor: "#D97706",
       bottomColor: "#92400E",
       iconSvg: `
-        <path d="M13 6H2a1 1 0 00-1 1v4a4 4 0 004 4h3a4 4 0 004-4V7a1 1 0 00-1-1zm-1 5a2 2 0 01-2 2H5a2 2 0 01-2-2V8h7v3zm3-3h-1v3h1a1.5 1.5 0 000-3zM2 17h11a1 1 0 010 2H2a1 1 0 010-2z" fill="currentColor"/>
-        <path d="M4.5 1c.5 1-.5 2 0 3M7.5 1c.5 1-.5 2 0 3M10.5 1c.5 1-.5 2 0 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <image href="/coffee.png" x="1" y="1" width="14" height="14" preserveAspectRatio="xMidYMid meet" />
       `,
     };
   }

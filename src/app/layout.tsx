@@ -5,8 +5,12 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Notion グルメ・カフェマップ",
+  title: "グルメマップ",
   description: "Notionデータベースとリアルタイム連携したインタラクティブな店舗マップ",
+  icons: {
+    icon: "/coffee.png",
+    apple: "/coffee.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

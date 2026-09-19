@@ -109,12 +109,16 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         {/* モバイル用折りたたみヘッダー & PC共通サマリーバー */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-blue-600 text-white font-bold text-sm shadow-md shadow-blue-500/30">
-              ☕
-            </span>
+            <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/50 p-1 border border-amber-200/60 dark:border-amber-800/60 shadow-md">
+              <img
+                src="/coffee.png"
+                alt="グルメマップ"
+                className="w-full h-full object-contain"
+              />
+            </div>
             <div>
               <h1 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white leading-tight">
-                Notion グルメマップ
+                グルメマップ
               </h1>
               <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
                 <span>
