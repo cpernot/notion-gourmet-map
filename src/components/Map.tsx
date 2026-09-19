@@ -20,21 +20,9 @@ interface GenreStyle {
 }
 
 const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
-  // ヴィーガン対応店舗は爽やかなエメラルドグリーンを最優先
-  if (isVegan) {
-    return {
-      topColor: "#10B981",
-      bottomColor: "#047857",
-      iconSvg: `
-        <path d="M14 2C9 2 5 6 5 11c0 2 .5 3.5 1.5 4.5C5.5 14.5 2 11 2 7c0 0 0-3 3-4 0 0-3 5 0 9 0 0 2-4 7-6 1.5-.6 2-4 2-4z" fill="currentColor"/>
-        <path d="M14 2c-1 4-3 7-7.5 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-      `,
-    };
-  }
-
   const g = genre || "";
 
-  // カフェ・喫茶: 芳醇なアンバー＆エスプレッソブラウン（coffee.pngアイコンを使用）
+  // 1. カフェ・喫茶: 芳醇なアンバー＆エスプレッソブラウン（coffee.pngアイコンを使用）
   if (g.includes("カフェ") || g.includes("喫茶") || g.includes("珈琲")) {
     return {
       topColor: "#D97706",
@@ -45,7 +33,7 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
     };
   }
 
-  // イタリアン・ピザ・パスタ: トスカーナワイン＆クリムゾンレッド
+  // 2. イタリアン・ピザ・パスタ: トスカーナワイン＆クリムゾンレッド
   if (g.includes("イタリアン") || g.includes("ピザ") || g.includes("パスタ") || g.includes("フレンチ")) {
     return {
       topColor: "#E11D48",
@@ -59,7 +47,7 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
     };
   }
 
-  // ラーメン・つけ麺: サンセットオレンジ＆温かなスープ
+  // 3. ラーメン・つけ麺: サンセットオレンジ＆温かなスープ
   if (g.includes("ラーメン") || g.includes("拉麺") || g.includes("麺")) {
     return {
       topColor: "#EA580C",
@@ -73,7 +61,7 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
     };
   }
 
-  // 和食・寿司: 伝統の藍色＆オーシャンネイビー
+  // 4. 和食・寿司: 伝統の藍色＆オーシャンネイビー
   if (g.includes("和食") || g.includes("寿司") || g.includes("鮨") || g.includes("海鮮")) {
     return {
       topColor: "#2563EB",
@@ -86,7 +74,7 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
     };
   }
 
-  // 居酒屋・バー: ロイヤルバイオレット＆カクテルパープル
+  // 5. 居酒屋・バー: ロイヤルバイオレット＆カクテルパープル
   if (g.includes("居酒屋") || g.includes("バー") || g.includes("酒")) {
     return {
       topColor: "#8B5CF6",
@@ -98,7 +86,7 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
     };
   }
 
-  // 焼肉・ステーキ: 熟成ルビー＆チャコールレッド
+  // 6. 焼肉・ステーキ: 熟成ルビー＆チャコールレッド
   if (g.includes("焼肉") || g.includes("ステーキ") || g.includes("肉")) {
     return {
       topColor: "#DC2626",
@@ -110,7 +98,7 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
     };
   }
 
-  // 中華・点心: ウォームコーラル
+  // 7. 中華・点心: ウォームコーラル
   if (g.includes("中華") || g.includes("餃子") || g.includes("飲茶")) {
     return {
       topColor: "#F43F5E",
@@ -118,6 +106,18 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
       iconSvg: `
         <path d="M8 2C4.5 2 2 4.5 2 7c0 3 2.5 5 6 5s6-2 6-5c0-2.5-2.5-5-6-5zm0 1.5c1.5 0 3 .8 3.5 2h-7C5 4.3 6.5 3.5 8 3.5z" fill="currentColor"/>
         <path d="M1 13h14v2H1z" fill="currentColor" opacity="0.6"/>
+      `,
+    };
+  }
+
+  // 8. ジャンル自体がヴィーガン / 自然食の場合、またはジャンル不明でヴィーガン対応の場合
+  if (g.includes("ヴィーガン") || g.includes("ビーガン") || g.includes("自然食") || (isVegan && (!g || g === "その他"))) {
+    return {
+      topColor: "#10B981",
+      bottomColor: "#047857",
+      iconSvg: `
+        <path d="M14 2C9 2 5 6 5 11c0 2 .5 3.5 1.5 4.5C5.5 14.5 2 11 2 7c0 0 0-3 3-4 0 0-3 5 0 9 0 0 2-4 7-6 1.5-.6 2-4 2-4z" fill="currentColor"/>
+        <path d="M14 2c-1 4-3 7-7.5 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
       `,
     };
   }
@@ -143,6 +143,16 @@ const createCustomPin = (place: Place, isSelected: boolean) => {
 
   const pulseRing = isSelected
     ? `<circle cx="19" cy="18" r="18" stroke="${style.topColor}" stroke-width="3" stroke-opacity="0.6" fill="none" class="animate-ping"/>`
+    : "";
+
+  const veganBadge = place.isVegan
+    ? `
+      <!-- ヴィーガン対応バッジ（右肩の小さなグリーンリーフ） -->
+      <g transform="translate(24, 0)">
+        <circle cx="6" cy="6" r="5.5" fill="#10B981" stroke="#FFFFFF" stroke-width="1.5"/>
+        <path d="M8.5 3.5C6.5 3.5 5 4.8 5 6.8c0 .8.2 1.4.6 1.8-.4-.4-.6-1-.6-1.8 0 0 0-1.2 1.2-1.6 0 0-1.2 1.6 0 2.8 0 0 .8-1.2 2.3-1.8.6-.2.8-1.2.8-1.2z" fill="#FFFFFF"/>
+      </g>
+    `
     : "";
 
   const svgHtml = `
@@ -172,6 +182,8 @@ const createCustomPin = (place: Place, isSelected: boolean) => {
             ${style.iconSvg}
           </svg>
         </g>
+
+        ${veganBadge}
       </svg>
     </div>
   `;
