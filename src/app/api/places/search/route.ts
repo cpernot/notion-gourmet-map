@@ -7,20 +7,41 @@ import {
 
 export async function POST(request: Request) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "GOOGLE_PLACES_API_KEY が設定されていません。" },
-      { status: 500 }
-    );
-  }
+  const masterProxyUrl =
+    process.env.SHARED_SEARCH_PROXY_URL ||
+    "https://notion-gourmet-map.vercel.app/api/places/search";
 
   try {
-    const { query } = await request.json();
+    const body = await request.json();
+    const { query } = body;
     if (!query || typeof query !== "string" || !query.trim()) {
       return NextResponse.json(
         { error: "検索キーワードを入力してください。" },
         { status: 400 }
       );
+    }
+
+    // If no API key is configured on this instance, proxy to the master deployment
+    if (!apiKey) {
+      console.log("No local GOOGLE_PLACES_API_KEY found. Forwarding to master proxy:", masterProxyUrl);
+      try {
+        const proxyRes = await fetch(masterProxyUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: query.trim() }),
+        });
+        const proxyData = await proxyRes.json();
+        return NextResponse.json(proxyData, { status: proxyRes.status });
+      } catch (proxyErr: any) {
+        console.error("Proxy error:", proxyErr);
+        return NextResponse.json(
+          {
+            error:
+              "Google Places API キーが未設定で、共有検索プロキシへの接続にも失敗しました。",
+          },
+          { status: 502 }
+        );
+      }
     }
 
     const url = "https://places.googleapis.com/v1/places:searchText";
