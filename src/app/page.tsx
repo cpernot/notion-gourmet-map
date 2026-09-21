@@ -72,23 +72,49 @@ export default function HomePage() {
     }, 4500);
   };
 
-  // 登録店舗からユニークなジャンル一覧を抽出
+  // 基本ジャンル（朝ごはん, 昼ごはん, 夜ごはん, パン屋, カフェ）を常に表示
   const availableGenres = useMemo(() => {
-    const genreSet = new Set<string>();
+    const defaultList = ["朝ごはん", "昼ごはん", "夜ごはん", "パン屋", "カフェ"];
+    const extraGenres = new Set<string>();
     places.forEach((p) => {
-      if (p.genre && p.genre.trim()) {
-        genreSet.add(p.genre.trim());
+      if (p.genre && p.genre.trim() && !defaultList.includes(p.genre.trim())) {
+        // 既存の旧ジャンル（イタリアン、ラーメン等）は新ジャンルに包括されるため除外するか、その他のみ追加
+        if (p.genre === "その他") {
+          extraGenres.add("その他");
+        }
       }
     });
-    return Array.from(genreSet).sort();
+    return [...defaultList, ...Array.from(extraGenres)];
   }, [places]);
+
+  // 旧ジャンルから新ジャンルへの包括判定マップ
+  const genreMatches = (placeGenre: string = "", filterGenre: string): boolean => {
+    if (placeGenre === filterGenre) return true;
+    if (filterGenre === "昼ごはん") {
+      return ["昼ごはん", "イタリアン", "パスタ", "ピザ", "フレンチ", "洋食", "ランチ"].includes(placeGenre);
+    }
+    if (filterGenre === "夜ごはん") {
+      return ["夜ごはん", "ラーメン", "和食", "居酒屋", "焼肉", "中華", "寿司", "ディナー"].includes(placeGenre);
+    }
+    if (filterGenre === "パン屋") {
+      return ["パン屋", "ベーカリー", "パン"].includes(placeGenre);
+    }
+    if (filterGenre === "朝ごはん") {
+      return ["朝ごはん", "モーニング", "朝食"].includes(placeGenre);
+    }
+    if (filterGenre === "カフェ") {
+      return ["カフェ", "喫茶", "スイーツ"].includes(placeGenre);
+    }
+    return false;
+  };
 
   // フィルター処理
   const filteredPlaces = useMemo(() => {
     return places.filter((place) => {
       // ① ジャンルフィルター (複数選択: OR一致)
       if (filters.genres.length > 0) {
-        if (!place.genre || !filters.genres.includes(place.genre)) {
+        const matches = filters.genres.some((fg) => genreMatches(place.genre, fg));
+        if (!matches) {
           return false;
         }
       }
