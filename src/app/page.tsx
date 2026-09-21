@@ -34,6 +34,7 @@ export default function HomePage() {
     days: [],
     timeSlots: [],
     chainOnly: false,
+    openNow: false,
     parkingOnly: false,
   });
 
@@ -151,12 +152,57 @@ export default function HomePage() {
         }
       }
 
-      // ⑤ チェーン店フィルター
+      // ⑤ 営業中フィルター（今の日時で絞る）
+      if (filters.openNow) {
+        // 日本時間（JST）の現在曜日と時刻を取得
+        const now = new Date();
+        const jstDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+        const dayMap = ["日", "月", "火", "水", "木", "金", "土"];
+        const currentDay = dayMap[jstDate.getDay()];
+        const currentHour = jstDate.getHours() + jstDate.getMinutes() / 60;
+
+        // 1. 曜日チェック（定休日かどうか）
+        if (place.openDays.length > 0 && !place.openDays.includes(currentDay)) {
+          return false;
+        }
+
+        // 2. 開店・閉店時間チェック
+        if (typeof place.closeHour === "number") {
+          const openH = place.openHour ?? 0;
+          const closeH = place.closeHour;
+
+          if (closeH <= 5) {
+            // 深夜営業（例: 翌2時閉店）
+            const isLateNightOpen = currentHour >= (openH || 17) || currentHour < closeH;
+            if (!isLateNightOpen) return false;
+          } else {
+            // 通常営業（例: 11時〜22時）
+            if (currentHour < openH || currentHour >= closeH) {
+              return false;
+            }
+          }
+        } else if (place.timeSlots.length > 0) {
+          // 時間帯による判定（現在時刻に対応する時間帯が登録されているか）
+          let currentSlot = "";
+          if (currentHour < 10) currentSlot = "🌅 朝";
+          else if (currentHour < 12) currentSlot = "🥐 モーニング";
+          else if (currentHour < 14.5) currentSlot = "☀️ ランチ";
+          else if (currentHour < 17.5) currentSlot = "☕ カフェ";
+          else if (currentHour < 22) currentSlot = "🌙 ディナー";
+          else currentSlot = "🌃 深夜営業";
+
+          if (!place.timeSlots.includes(currentSlot)) {
+            return false;
+          }
+        }
+      }
+
+      // ⑥ チェーン店フィルター
       if (filters.chainOnly && !place.isChain) {
         return false;
       }
 
-      // ⑥ 駐車場あり限定
+      // ⑦ 駐車場あり限定
       if (filters.parkingOnly) {
         const hasParking = place.parking.some(
           (p) => p.includes("あり") || p.includes("無料") || p.includes("有料")

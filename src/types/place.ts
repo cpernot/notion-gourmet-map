@@ -26,6 +26,7 @@ export interface FilterState {
   days: string[];            // 空配列なら全曜日 ('月' | '火' | '水' | ...)
   timeSlots: string[];       // 空配列なら全時間帯 ('🌅 朝' | '🥐 モーニング' | ...)
   chainOnly: boolean;        // チェーン店のみ
+  openNow: boolean;          // 今営業中のみ
   veganOnly?: boolean;
   parkingOnly: boolean;
 }

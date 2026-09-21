@@ -43,12 +43,12 @@ const DAYS: OptionItem[] = [
 ];
 
 const TIME_SLOTS: OptionItem[] = [
-  { label: "-9:00)", value: "🌅 朝" },
-  { label: "9:00-11:00)", value: "🥐 モーニング" },
-  { label: "11:00-14:00)", value: "☀️ ランチ" },
-  { label: "14:00-17:00)", value: "☕ カフェ" },
-  { label: "17:00-22:00)", value: "🌙 ディナー" },
-  { label: "22:00-)", value: "🌃 深夜営業" },
+  { label: "-9:00", value: "🌅 朝" },
+  { label: "9:00-11:00", value: "🥐 モーニング" },
+  { label: "11:00-14:00", value: "☀️ ランチ" },
+  { label: "14:00-17:00", value: "☕ カフェ" },
+  { label: "17:00-22:00", value: "🌙 ディナー" },
+  { label: "22:00-", value: "🌃 深夜営業" },
 ];
 
 export const FilterBar: React.FC<FilterBarProps> = ({
@@ -80,6 +80,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     onChange({ ...filters, chainOnly: !filters.chainOnly });
   };
 
+  const handleOpenNowToggle = () => {
+    onChange({ ...filters, openNow: !filters.openNow });
+  };
+
   const handleParkingToggle = () => {
     onChange({ ...filters, parkingOnly: !filters.parkingOnly });
   };
@@ -91,6 +95,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       days: [],
       timeSlots: [],
       chainOnly: false,
+      openNow: false,
       parkingOnly: false,
     });
   };
@@ -101,6 +106,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     filters.days.length > 0 ||
     filters.timeSlots.length > 0 ||
     filters.chainOnly ||
+    filters.openNow ||
     filters.parkingOnly;
 
   return (
@@ -210,29 +216,45 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             className="flex-1 sm:w-40"
           />
 
-          {/* トグルボタン群（⑤ チェーン店, ⑥ 駐車場あり） */}
-          <div className="grid grid-cols-2 sm:flex items-center gap-1.5 pt-1 sm:pt-0">
-            {/* ⑤ チェーン店限定 */}
+          {/* トグルボタン群（⑤ 営業中, ⑥ チェーン店, ⑦ 駐車場あり） */}
+          <div className="flex items-center gap-1.5 pt-1 sm:pt-0 flex-wrap">
+            {/* ⑤ 営業中限定 */}
+            <button
+              type="button"
+              onClick={handleOpenNowToggle}
+              className={`flex items-center justify-center gap-1 text-xs font-medium py-2 px-3 rounded-xl border transition-all active:scale-95 ${
+                filters.openNow
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-500/30"
+                  : "bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${filters.openNow ? "bg-white animate-pulse" : "bg-emerald-500"}`} />
+              <span>営業中</span>
+            </button>
+
+            {/* ⑥ チェーン店限定 */}
             <button
               type="button"
               onClick={handleChainToggle}
-              className={`flex items-center justify-center gap-1 text-xs font-medium py-2 px-3 rounded-xl border transition-all active:scale-95 ${filters.chainOnly
+              className={`flex items-center justify-center gap-1 text-xs font-medium py-2 px-3 rounded-xl border transition-all active:scale-95 ${
+                filters.chainOnly
                   ? "bg-amber-600 text-white border-amber-600 shadow-sm shadow-amber-500/30"
                   : "bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100"
-                }`}
+              }`}
             >
               <Building2 className={`w-3.5 h-3.5 ${filters.chainOnly ? "text-white" : "text-amber-600"}`} />
               <span>チェーン店</span>
             </button>
 
-            {/* ⑥ 駐車場あり限定 */}
+            {/* ⑦ 駐車場あり限定 */}
             <button
               type="button"
               onClick={handleParkingToggle}
-              className={`flex items-center justify-center gap-1 text-xs font-medium py-2 px-3 rounded-xl border transition-all active:scale-95 ${filters.parkingOnly
+              className={`flex items-center justify-center gap-1 text-xs font-medium py-2 px-3 rounded-xl border transition-all active:scale-95 ${
+                filters.parkingOnly
                   ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-500/30"
                   : "bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100"
-                }`}
+              }`}
             >
               <Car className={`w-3.5 h-3.5 ${filters.parkingOnly ? "text-white" : "text-blue-600"}`} />
               <span>駐車場あり</span>
