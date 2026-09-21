@@ -33,7 +33,7 @@ export default function HomePage() {
     ratings: [],
     days: [],
     timeSlots: [],
-    veganOnly: false,
+    chainOnly: false,
     parkingOnly: false,
   });
 
@@ -125,8 +125,8 @@ export default function HomePage() {
         }
       }
 
-      // ⑤ ヴィーガン限定
-      if (filters.veganOnly && !place.isVegan) {
+      // ⑤ チェーン店フィルター
+      if (filters.chainOnly && !place.isChain) {
         return false;
       }
 

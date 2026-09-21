@@ -321,6 +321,21 @@ export async function POST(request: Request) {
     const notionUrl =
       createdPage.url || `https://www.notion.so/${createdPage.id.replace(/-/g, "")}`;
 
+    const chainKeywords = [
+      "スターバックス", "starbucks", "コメダ珈琲", "コメダ", "ドトール", "doutor", "タリーズ", "tullys",
+      "サンマルク", "saint marc", "星乃珈琲", "上島珈琲", "プロント", "pronto", "ブルーボトル", "blue bottle",
+      "マクドナルド", "mcdonald", "モスバーガー", "mos burger", "ケンタッキー", "kfc",
+      "サブウェイ", "subway", "バーガーキング", "burger king", "ロッテリア", "lotteria",
+      "サイゼリヤ", "ガスト", "デニーズ", "ジョナサン", "ロイヤルホスト", "ココス", "cocos", "バーミヤン", "ジョリーパスタ",
+      "大戸屋", "やよい軒", "まいどおおきに", "吉野家", "すき家", "松屋", "なか卯", "かつや", "松のや",
+      "丸亀製麺", "はなまるうどん", "スシロー", "くら寿司", "はま寿司", "かっぱ寿司", "魚べい",
+      "一蘭", "一風堂", "天下一品", "幸楽苑", "日高屋", "餃子の王将", "大阪王将", "リンガーハット",
+      "鳥貴族", "串カツ田中", "牛角", "焼肉きんぐ", "安楽亭", "しゃぶ葉", "温野菜", "叙々苑",
+      "ミスタードーナツ", "mister donut", "サーティワン", "baskin robbins", "スープストック", "soup stock",
+      "coco壱番屋", "ココイチ", "銀だこ", "PRONTO", "椿屋珈琲", "倉式珈琲", "珈琲館"
+    ];
+    const isChain = chainKeywords.some((kw) => place.name.toLowerCase().includes(kw.toLowerCase()));
+
     const newPlace: Place = {
       id: createdPage.id,
       name: place.name,
@@ -334,6 +349,7 @@ export async function POST(request: Request) {
       closeHour: place.latestCloseHour,
       isVegan: place.isVegan,
       isVegetarian: place.isVegetarian,
+      isChain,
       parking: parkingItems,
       coverUrl: place.photoUrl || undefined,
       mapsUrl: place.mapsUrl || undefined,

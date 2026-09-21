@@ -172,6 +172,33 @@ export async function GET() {
               !d.includes("なし")
           );
 
+        // 10.5. チェーン店判定
+        const chainKeywords = [
+          "スターバックス", "starbucks", "コメダ珈琲", "コメダ", "ドトール", "doutor", "タリーズ", "tullys",
+          "サンマルク", "saint marc", "星乃珈琲", "上島珈琲", "プロント", "pronto", "ブルーボトル", "blue bottle",
+          "マクドナルド", "mcdonald", "モスバーガー", "mos burger", "ケンタッキー", "kfc",
+          "サブウェイ", "subway", "バーガーキング", "burger king", "ロッテリア", "lotteria",
+          "サイゼリヤ", "ガスト", "デニーズ", "ジョナサン", "ロイヤルホスト", "ココス", "cocos", "バーミヤン", "ジョリーパスタ",
+          "大戸屋", "やよい軒", "まいどおおきに", "吉野家", "すき家", "松屋", "なか卯", "かつや", "松のや",
+          "丸亀製麺", "はなまるうどん", "スシロー", "くら寿司", "はま寿司", "かっぱ寿司", "魚べい",
+          "一蘭", "一風堂", "天下一品", "幸楽苑", "日高屋", "餃子の王将", "大阪王将", "リンガーハット",
+          "鳥貴族", "串カツ田中", "牛角", "焼肉きんぐ", "安楽亭", "しゃぶ葉", "温野菜", "叙々苑",
+          "ミスタードーナツ", "mister donut", "サーティワン", "baskin robbins", "スープストック", "soup stock",
+          "coco壱番屋", "ココイチ", "銀だこ", "PRONTO", "椿屋珈琲", "倉式珈琲", "珈琲館"
+        ];
+
+        const isChainProp =
+          Boolean(props["チェーン店"]?.checkbox) ||
+          Boolean(props["チェーン"]?.checkbox) ||
+          Boolean(props["チェーン店"]?.select?.name?.includes("チェーン")) ||
+          Boolean(props["チェーン"]?.select?.name?.includes("チェーン")) ||
+          Boolean(props["タイプ"]?.select?.name?.includes("チェーン"));
+
+        const lowerName = name.toLowerCase();
+        const isChainKeyword = chainKeywords.some((kw) => lowerName.includes(kw.toLowerCase()));
+
+        const isChain = isChainProp || isChainKeyword;
+
         // 11. 駐車場
         let parking: string[] = [];
         if (props["駐車場"]?.multi_select) {
@@ -213,6 +240,7 @@ export async function GET() {
           closeHour,
           isVegan,
           isVegetarian,
+          isChain,
           parking,
           coverUrl,
           mapsUrl,

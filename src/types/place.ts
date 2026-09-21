@@ -12,6 +12,7 @@ export interface Place {
   closeHour?: number;
   isVegan: boolean;
   isVegetarian: boolean;
+  isChain: boolean;
   parking: string[];
   coverUrl?: string;
   mapsUrl?: string;
@@ -24,6 +25,7 @@ export interface FilterState {
   ratings: string[];         // 空配列なら全評価 ('5' | '4' | '3' | '2' | '1')
   days: string[];            // 空配列なら全曜日 ('月' | '火' | '水' | ...)
   timeSlots: string[];       // 空配列なら全時間帯 ('🌅 朝' | '🥐 モーニング' | ...)
-  veganOnly: boolean;
+  chainOnly: boolean;        // チェーン店のみ
+  veganOnly?: boolean;
   parkingOnly: boolean;
 }

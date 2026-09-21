@@ -1,6 +1,6 @@
-# 🗺️ グルメマップ (Gourmet Map for Notion)
+# 🍽️ mogu.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcpernot%2Fnotion-gourmet-map&env=NOTION_TOKEN,NOTION_DATABASE_ID&envDescription=Notion%E3%81%AE%E3%82%A4%E3%83%B3%E3%83%86%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%83%88%E3%83%BC%E3%82%AF%E3%83%B3%E3%81%A8%E3%83%87%E3%83%BC%E3%82%BF%E3%83%99%E3%83%BC%E3%82%B9ID%E3%82%92%E5%85%A5%E5%8A%9B%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82Google%20API%E3%82%AD%E3%83%BC%E3%81%AF%E5%85%B1%E6%9C%89%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC%E3%81%8C%E4%BD%BF%E7%94%A8%E3%81%95%E3%82%8C%E3%82%8B%E3%81%9F%E3%82%81%E7%A9%BA%E6%AC%84%E3%81%A7OK%E3%81%A7%E3%81%99%E3%80%82&project-name=my-gourmet-map&repository-name=my-gourmet-map)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcpernot%2Fnotion-gourmet-map&env=NOTION_TOKEN,NOTION_DATABASE_ID&envDescription=Notion%E3%81%AE%E3%82%A4%E3%83%B3%E3%83%86%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%83%88%E3%83%BC%E3%82%AF%E3%83%B3%E3%81%A8%E3%83%87%E3%83%BC%E3%82%BF%E3%83%99%E3%83%BC%E3%82%B9ID%E3%82%92%E5%85%A5%E5%8A%9B%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%E3%80%82Google%20API%E3%82%AD%E3%83%BC%E3%81%AF%E5%85%B1%E6%9C%89%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC%E3%81%8C%E4%BD%BF%E7%94%A8%E3%81%95%E3%82%8C%E3%82%8B%E3%81%9F%E3%82%81%E7%A9%BA%E6%AC%84%E3%81%A7OK%E3%81%A7%E3%81%99%E3%80%82&project-name=my-mogu&repository-name=my-mogu)
 
 Notionデータベースとリアルタイム連携し、蓄積されたカフェやレストランをインタラクティブな地図（Leaflet / OpenStreetMap）上に美しいベクターピンで表示するWebアプリケーションです。
 
@@ -9,7 +9,7 @@ Google Maps APIの有料JavaScript地図キーは不要（完全無料のOpenStr
 
 ---
 
-## 🚀 3分で自分専用のグルメマップを作る方法 (ワンクリックデプロイ)
+## 🚀 3分で自分専用の mogu. を作る方法 (ワンクリックデプロイ)
 
 プログラミングやPCでの黒い画面（コマンド操作）は一切不要です。ブラウザだけで完結します。
 
