@@ -29,10 +29,10 @@ export default function HomePage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<FilterState>({
-    genre: "all",
-    rating: "all",
-    day: "all",
-    timeSlot: "all",
+    genres: [],
+    ratings: [],
+    days: [],
+    timeSlots: [],
     veganOnly: false,
     parkingOnly: false,
   });
@@ -86,40 +86,42 @@ export default function HomePage() {
   // フィルター処理
   const filteredPlaces = useMemo(() => {
     return places.filter((place) => {
-      // ① ジャンルフィルター
-      if (filters.genre !== "all") {
-        if (!place.genre || place.genre !== filters.genre) {
+      // ① ジャンルフィルター (複数選択: OR一致)
+      if (filters.genres.length > 0) {
+        if (!place.genre || !filters.genres.includes(place.genre)) {
           return false;
         }
       }
 
-      // ② 評価フィルター (★5のみ / ★4以上 / ★3以上)
-      if (filters.rating !== "all") {
-        const targetRating = parseInt(filters.rating, 10);
-        // "★4" や "4.5" などから数値を抽出
+      // ② 評価フィルター (複数選択: いずれかに該当すればOK)
+      if (filters.ratings.length > 0) {
         const ratingMatch = place.rating?.match(/(\d+(\.\d+)?)/);
         const placeStars = ratingMatch ? parseFloat(ratingMatch[0]) : 0;
+        const matchesAnyRating = filters.ratings.some((r) => {
+          const target = parseInt(r, 10);
+          if (target === 5) return placeStars >= 4.8;
+          if (target === 4) return placeStars >= 3.8 && placeStars < 4.8;
+          if (target === 3) return placeStars >= 2.8 && placeStars < 3.8;
+          if (target === 2) return placeStars >= 1.8 && placeStars < 2.8;
+          if (target === 1) return placeStars < 1.8;
+          return false;
+        });
+        if (!matchesAnyRating) return false;
+      }
 
-        if (targetRating === 5) {
-          if (placeStars < 4.8) return false;
-        } else if (targetRating === 4) {
-          if (placeStars < 3.8) return false;
-        } else if (targetRating === 3) {
-          if (placeStars < 2.8) return false;
+      // ③ 営業曜日フィルター (複数選択: 選択された曜日のいずれかに営業していればOK)
+      if (filters.days.length > 0) {
+        if (place.openDays.length > 0) {
+          const hasMatchingDay = filters.days.some((d) => place.openDays.includes(d));
+          if (!hasMatchingDay) return false;
         }
       }
 
-      // ③ 営業曜日フィルター
-      if (filters.day !== "all") {
-        if (place.openDays.length > 0 && !place.openDays.includes(filters.day)) {
-          return false;
-        }
-      }
-
-      // ④ 時間帯フィルター
-      if (filters.timeSlot !== "all") {
-        if (place.timeSlots.length > 0 && !place.timeSlots.includes(filters.timeSlot)) {
-          return false;
+      // ④ 時間帯フィルター (複数選択: 選択された時間帯のいずれかに営業していればOK)
+      if (filters.timeSlots.length > 0) {
+        if (place.timeSlots.length > 0) {
+          const hasMatchingSlot = filters.timeSlots.some((ts) => place.timeSlots.includes(ts));
+          if (!hasMatchingSlot) return false;
         }
       }
 

@@ -20,10 +20,10 @@ export interface Place {
 }
 
 export interface FilterState {
-  genre: string;          // 'all' | 'カフェ' | 'イタリアン' | ...
-  rating: string;         // 'all' | '5' | '4' | '3'
-  day: string;            // 'all' | '月' | '火' | ...
-  timeSlot: string;       // 'all' | '🌅 朝' | '🥐 モーニング' | ...
+  genres: string[];          // 空配列なら全ジャンル
+  ratings: string[];         // 空配列なら全評価 ('5' | '4' | '3' | '2' | '1')
+  days: string[];            // 空配列なら全曜日 ('月' | '火' | '水' | ...)
+  timeSlots: string[];       // 空配列なら全時間帯 ('🌅 朝' | '🥐 モーニング' | ...)
   veganOnly: boolean;
   parkingOnly: boolean;
 }

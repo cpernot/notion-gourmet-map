@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { FilterState } from "@/types/place";
+import { MultiSelectDropdown, OptionItem } from "./MultiSelectDropdown";
 import {
   Filter,
   RotateCcw,
@@ -23,15 +24,15 @@ interface FilterBarProps {
   availableGenres: string[];
 }
 
-const RATINGS = [
-  { label: "全評価", value: "all" },
-  { label: "★5 のみ", value: "5" },
-  { label: "★4 以上", value: "4" },
-  { label: "★3 以上", value: "3" },
+const RATINGS: OptionItem[] = [
+  { label: "★5", value: "5" },
+  { label: "★4", value: "4" },
+  { label: "★3", value: "3" },
+  { label: "★2", value: "2" },
+  { label: "★1", value: "1" },
 ];
 
-const DAYS = [
-  { label: "全曜日", value: "all" },
+const DAYS: OptionItem[] = [
   { label: "月曜", value: "月" },
   { label: "火曜", value: "火" },
   { label: "水曜", value: "水" },
@@ -41,8 +42,7 @@ const DAYS = [
   { label: "日曜", value: "日" },
 ];
 
-const TIME_SLOTS = [
-  { label: "全時間帯", value: "all" },
+const TIME_SLOTS: OptionItem[] = [
   { label: "🌅 朝 (〜10時)", value: "🌅 朝" },
   { label: "🥐 モーニング (10〜12時)", value: "🥐 モーニング" },
   { label: "☀️ ランチ (11〜14時)", value: "☀️ ランチ" },
@@ -60,20 +60,20 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleGenreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange({ ...filters, genre: e.target.value });
+  const handleGenresChange = (genres: string[]) => {
+    onChange({ ...filters, genres });
   };
 
-  const handleRatingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange({ ...filters, rating: e.target.value });
+  const handleRatingsChange = (ratings: string[]) => {
+    onChange({ ...filters, ratings });
   };
 
-  const handleDayChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange({ ...filters, day: e.target.value });
+  const handleDaysChange = (days: string[]) => {
+    onChange({ ...filters, days });
   };
 
-  const handleTimeSlotChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange({ ...filters, timeSlot: e.target.value });
+  const handleTimeSlotsChange = (timeSlots: string[]) => {
+    onChange({ ...filters, timeSlots });
   };
 
   const handleVeganToggle = () => {
@@ -86,20 +86,20 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
   const handleReset = () => {
     onChange({
-      genre: "all",
-      rating: "all",
-      day: "all",
-      timeSlot: "all",
+      genres: [],
+      ratings: [],
+      days: [],
+      timeSlots: [],
       veganOnly: false,
       parkingOnly: false,
     });
   };
 
   const hasActiveFilters =
-    filters.genre !== "all" ||
-    filters.rating !== "all" ||
-    filters.day !== "all" ||
-    filters.timeSlot !== "all" ||
+    filters.genres.length > 0 ||
+    filters.ratings.length > 0 ||
+    filters.days.length > 0 ||
+    filters.timeSlots.length > 0 ||
     filters.veganOnly ||
     filters.parkingOnly;
 
@@ -168,93 +168,48 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           } flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3 sm:mt-2.5 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-gray-800 flex-wrap`}
         >
           {/* ① ジャンルセレクター */}
-          <div className="relative flex-1 sm:w-36">
-            <label className="sm:hidden text-[10px] font-semibold text-gray-500 block mb-1">
-              ① ジャンル
-            </label>
-            <div className="relative">
-              <Utensils className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-amber-500 pointer-events-none" />
-              <select
-                value={filters.genre}
-                onChange={handleGenreChange}
-                className="w-full text-xs font-medium bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl pl-8 pr-7 py-2 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
-              >
-                <option value="all">全ジャンル</option>
-                {availableGenres.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
+          <MultiSelectDropdown
+            label="① ジャンル"
+            icon={<Utensils className="w-3.5 h-3.5 text-amber-500" />}
+            options={availableGenres.map((g) => ({ label: g, value: g }))}
+            selectedValues={filters.genres}
+            onChange={handleGenresChange}
+            allLabel="全ジャンル"
+            className="flex-1 sm:w-36"
+          />
 
           {/* ② 評価セレクター */}
-          <div className="relative flex-1 sm:w-28">
-            <label className="sm:hidden text-[10px] font-semibold text-gray-500 block mb-1">
-              ② 評価
-            </label>
-            <div className="relative">
-              <Star className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-yellow-500 fill-yellow-400 pointer-events-none" />
-              <select
-                value={filters.rating}
-                onChange={handleRatingChange}
-                className="w-full text-xs font-medium bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl pl-8 pr-7 py-2 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
-              >
-                {RATINGS.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
+          <MultiSelectDropdown
+            label="② 評価"
+            icon={<Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-400" />}
+            options={RATINGS}
+            selectedValues={filters.ratings}
+            onChange={handleRatingsChange}
+            allLabel="全評価"
+            className="flex-1 sm:w-28"
+          />
 
           {/* ③ 営業曜日セレクター */}
-          <div className="relative flex-1 sm:w-28">
-            <label className="sm:hidden text-[10px] font-semibold text-gray-500 block mb-1">
-              ③ 営業曜日
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              <select
-                value={filters.day}
-                onChange={handleDayChange}
-                className="w-full text-xs font-medium bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl pl-8 pr-7 py-2 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
-              >
-                {DAYS.map((d) => (
-                  <option key={d.value} value={d.value}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
+          <MultiSelectDropdown
+            label="③ 営業曜日"
+            icon={<Calendar className="w-3.5 h-3.5 text-blue-500" />}
+            options={DAYS}
+            selectedValues={filters.days}
+            onChange={handleDaysChange}
+            allLabel="全曜日"
+            className="flex-1 sm:w-28"
+          />
 
           {/* ④ 時間帯セレクター */}
-          <div className="relative flex-1 sm:w-40">
-            <label className="sm:hidden text-[10px] font-semibold text-gray-500 block mb-1">
-              ④ 時間帯
-            </label>
-            <div className="relative">
-              <Clock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              <select
-                value={filters.timeSlot}
-                onChange={handleTimeSlotChange}
-                className="w-full text-xs font-medium bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-xl pl-8 pr-7 py-2 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
-              >
-                {TIME_SLOTS.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
+          <MultiSelectDropdown
+            label="④ 時間帯"
+            icon={<Clock className="w-3.5 h-3.5 text-indigo-500" />}
+            options={TIME_SLOTS}
+            selectedValues={filters.timeSlots}
+            onChange={handleTimeSlotsChange}
+            allLabel="全時間帯"
+            className="flex-1 sm:w-40"
+          />
 
           {/* トグルボタン群（⑤ ヴィーガン, ⑥ 駐車場あり） */}
           <div className="grid grid-cols-2 sm:flex items-center gap-1.5 pt-1 sm:pt-0">
