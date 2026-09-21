@@ -33,6 +33,56 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
     };
   }
 
+  // 1.5. パン屋: ゴールデンアンバー＆ブレッド
+  if (g.includes("パン") || g.includes("ベーカリー")) {
+    return {
+      topColor: "#D97706",
+      bottomColor: "#92400E",
+      iconSvg: `
+        <path d="M2 9c0-3.5 2.5-6 6-6s6 2.5 6 6H2z" fill="currentColor"/>
+        <path d="M4.5 5.5c.8-.8 1.8-1.2 3.5-1.2s2.7.4 3.5 1.2" stroke="#FFF" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+        <rect x="2" y="9.5" width="12" height="2" rx="1" fill="currentColor" opacity="0.8"/>
+      `,
+    };
+  }
+
+  // 1.8. 朝ごはん・モーニング: フレッシュイエロー＆サンシャイン
+  if (g.includes("朝ごはん") || g.includes("朝食") || g.includes("モーニング")) {
+    return {
+      topColor: "#F59E0B",
+      bottomColor: "#B45309",
+      iconSvg: `
+        <circle cx="8" cy="8" r="4" fill="currentColor"/>
+        <path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      `,
+    };
+  }
+
+  // 1.9. 昼ごはん・ランチ: 鮮やかなビストロオレンジ＆プレート
+  if (g.includes("昼ごはん") || g.includes("ランチ")) {
+    return {
+      topColor: "#EA580C",
+      bottomColor: "#9A3412",
+      iconSvg: `
+        <circle cx="8" cy="8" r="5.5" fill="currentColor" opacity="0.4"/>
+        <path d="M5 4v3.5a1.5 1.5 0 001.5 1.5V13h1V9A1.5 1.5 0 009 7.5V4H7.8v2.5h-.6V4H6v2.5h-.6V4H5zm4.8 0v4h.8v5h1V4h-1.8z" fill="currentColor"/>
+      `,
+    };
+  }
+
+  // 1.95. 夜ごはん・ディナー: シックなトワイライトバイオレット＆ムーン
+  if (g.includes("夜ごはん") || g.includes("ディナー")) {
+    return {
+      topColor: "#6366F1",
+      bottomColor: "#3730A3",
+      iconSvg: `
+        <path d="M12 8a5 5 0 01-6.5-4.8 5 5 0 106.3 6.3A4.9 4.9 0 0112 8z" fill="currentColor"/>
+        <circle cx="12" cy="3" r="0.8" fill="currentColor"/>
+        <circle cx="4" cy="11" r="0.8" fill="currentColor"/>
+      `,
+    };
+  }
+
   // 2. イタリアン・ピザ・パスタ: トスカーナワイン＆クリムゾンレッド
   if (g.includes("イタリアン") || g.includes("ピザ") || g.includes("パスタ") || g.includes("フレンチ")) {
     return {

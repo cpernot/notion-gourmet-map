@@ -26,23 +26,37 @@ export interface GooglePlaceSearchResult {
 }
 
 const GENRE_KEYWORD_RULES: [string, string[]][] = [
-  ["カフェ", ["カフェ", "CAFE", "珈琲", "喫茶", "コーヒー", "スイーツ", "ベーカリー", "パン"]],
-  ["イタリアン", ["イタリアン", "パスタ", "ピザ", "ピッツァ", "フレンチ"]],
-  ["ラーメン", ["ラーメン", "つけ麺", "拉麺", "中華そば"]],
-  ["居酒屋", ["居酒屋", "バル", "酒場", "ダイニングバー", "立ち飲み"]],
-  ["和食", ["和食", "寿司", "鮨", "割烹", "日本料理", "うどん", "蕎麦", "そば", "天ぷら", "お好み焼き", "定食"]],
-  ["中華", ["中華", "餃子", "飲茶", "点心"]],
-  ["焼肉", ["焼肉", "ホルモン", "ステーキ", "ジンギスカン", "韓国料理"]],
+  ["朝ごはん", ["朝食", "モーニング", "朝ごはん", "breakfast"]],
+  ["パン屋", ["ベーカリー", "パン屋", "パン", "ブーランジェリー", "bakery", "bread", "bagel", "ベーグル"]],
+  ["カフェ", ["カフェ", "CAFE", "cafe", "珈琲", "喫茶", "コーヒー", "スイーツ", "デザート", "アイス"]],
+  ["昼ごはん", ["ランチ", "昼ごはん", "定食", "イタリアン", "パスタ", "ピザ", "ピッツァ", "フレンチ", "洋食"]],
+  ["夜ごはん", [
+    "ディナー", "夜ごはん", "ラーメン", "つけ麺", "拉麺", "中華そば",
+    "居酒屋", "バル", "酒場", "ダイニングバー", "立ち飲み", "バー",
+    "和食", "寿司", "鮨", "割烹", "日本料理", "海鮮", "天ぷら",
+    "焼肉", "ホルモン", "ステーキ", "中華", "餃子", "飲茶", "うどん", "蕎麦", "そば"
+  ]],
 ];
 
 const GENRE_TYPE_RULES: [string, string[]][] = [
-  ["カフェ", ["cafe", "coffee_shop", "bakery", "dessert_shop", "ice_cream_shop"]],
-  ["イタリアン", ["italian_restaurant", "pizza_restaurant"]],
-  ["ラーメン", ["ramen_restaurant"]],
-  ["居酒屋", ["izakaya", "bar", "pub"]],
-  ["和食", ["japanese_restaurant", "sushi_restaurant", "seafood_restaurant"]],
-  ["中華", ["chinese_restaurant"]],
-  ["焼肉", ["barbecue_restaurant", "yakiniku_restaurant", "korean_restaurant"]],
+  ["朝ごはん", ["breakfast_restaurant", "breakfast"]],
+  ["パン屋", ["bakery"]],
+  ["カフェ", ["cafe", "coffee_shop", "dessert_shop", "ice_cream_shop"]],
+  ["昼ごはん", ["lunch", "italian_restaurant", "pizza_restaurant", "french_restaurant"]],
+  ["夜ごはん", [
+    "dinner",
+    "ramen_restaurant",
+    "izakaya",
+    "bar",
+    "pub",
+    "japanese_restaurant",
+    "sushi_restaurant",
+    "seafood_restaurant",
+    "barbecue_restaurant",
+    "chinese_restaurant",
+    "yakiniku_restaurant",
+    "steak_house"
+  ]],
 ];
 
 export function mapGenre(types: string[] = [], name: string = ""): string {
