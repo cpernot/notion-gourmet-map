@@ -1,27 +1,48 @@
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+function verifyKey(key?: string | null): boolean {
+  const serverSecret = process.env.ADMIN_SECRET_KEY;
+  // もしサーバーに ADMIN_SECRET_KEY が未設定なら、誰でも登録可能（開発環境やデフォルト）
+  if (!serverSecret) {
+    return true;
+  }
+  return !!key && key === serverSecret;
+}
+
+export async function GET(request: Request) {
   try {
-    const { key } = await request.json();
-    const serverSecret = process.env.ADMIN_SECRET_KEY;
+    const { searchParams } = new URL(request.url);
+    const key = searchParams.get("key");
 
-    // もしサーバーに ADMIN_SECRET_KEY が未設定なら、誰でも登録可能（キー検証不要）
-    if (!serverSecret) {
-      return NextResponse.json({ valid: true, message: "管理者キーは未設定です。" });
-    }
-
-    if (key && key === serverSecret) {
-      return NextResponse.json({ valid: true });
-    }
-
-    return NextResponse.json(
-      { valid: false, error: "管理者キーが一致しません。" },
-      { status: 401 }
-    );
-  } catch {
-    return NextResponse.json(
-      { valid: false, error: "認証チェック中にエラーが発生しました。" },
-      { status: 500 }
-    );
+    const isValid = verifyKey(key);
+    return NextResponse.json({
+      valid: isValid,
+      error: isValid ? undefined : "管理者キーが一致しません。",
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "認証チェック中にエラーが発生しました。";
+    return NextResponse.json({ valid: false, error: msg }, { status: 500 });
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    let key: string | undefined;
+    try {
+      const body = await request.json();
+      key = body.key;
+    } catch {
+      key = undefined;
+    }
+
+    const isValid = verifyKey(key);
+    return NextResponse.json({
+      valid: isValid,
+      error: isValid ? undefined : "管理者キーが一致しません。",
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "認証チェック中にエラーが発生しました。";
+    return NextResponse.json({ valid: false, error: msg }, { status: 500 });
+  }
+}
+

@@ -88,7 +88,7 @@ export default function HomePage() {
 
       try {
         const res = await fetch(`/api/auth/verify?key=${encodeURIComponent(candidateKey)}`);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({ valid: false }));
 
         if (data.valid) {
           setIsAdmin(true);
