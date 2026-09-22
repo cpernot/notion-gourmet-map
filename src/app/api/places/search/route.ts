@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   mapGenre,
+  mapGenres,
   extractOperatingSchedule,
   GooglePlaceSearchResult,
 } from "@/utils/googlePlaces";
@@ -97,7 +98,8 @@ export async function POST(request: Request) {
         photoUrl = `https://places.googleapis.com/v1/${place.photos[0].name}/media?maxWidthPx=800&key=${apiKey}`;
       }
 
-      const genre = mapGenre(types, name);
+      const genres = mapGenres(types, name);
+      const genre = genres[0] || "その他";
 
       const openingHours = place.regularOpeningHours || null;
       const weekdayDescriptions: string[] = openingHours?.weekdayDescriptions || [];
@@ -123,6 +125,7 @@ export async function POST(request: Request) {
         longitude,
         mapsUrl,
         genre,
+        genres,
         photoUrl,
         googleRating,
         website,

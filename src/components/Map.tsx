@@ -10,6 +10,7 @@ import { PlacePopup } from "./PlacePopup";
 interface MapProps {
   places: Place[];
   selectedPlaceId?: string | null;
+  activeFilterGenres?: string[];
 }
 
 // ジャンル別のカラーパレット & ベクターアイコン定義 (Apple / Google Maps スタイル)
@@ -183,8 +184,41 @@ const getGenreStyle = (genre?: string, isVegan?: boolean): GenreStyle => {
 };
 
 // スタイリッシュなSVGティアドロップピンの生成
-const createCustomPin = (place: Place, isSelected: boolean) => {
-  const style = getGenreStyle(place.genre, place.isVegan);
+const createCustomPin = (
+  place: Place,
+  isSelected: boolean,
+  activeFilterGenres?: string[]
+) => {
+  // 案1（代表ジャンル表示）＋ 案2（フィルター連動）
+  let targetGenre = place.genre || "その他";
+
+  if (activeFilterGenres && activeFilterGenres.length > 0 && place.genres && place.genres.length > 0) {
+    // フィルターで選択中のジャンルに合致するものがあれば、そのジャンル色に変身！
+    const matched = activeFilterGenres.find((afg) =>
+      place.genres?.some((pg) => {
+        if (pg === afg) return true;
+        if (afg === "昼ごはん") {
+          return ["昼ごはん", "イタリアン", "パスタ", "ピザ", "フレンチ", "洋食", "ランチ"].includes(pg);
+        }
+        if (afg === "夜ごはん" || afg === "夜ご飯") {
+          return ["夜ごはん", "夜ご飯", "ラーメン", "和食", "居酒屋", "焼肉", "中華", "寿司", "ディナー"].includes(pg);
+        }
+        if (afg === "パン屋") return ["パン屋", "ベーカリー", "パン"].includes(pg);
+        if (afg === "朝ごはん") return ["朝ごはん", "モーニング", "朝食"].includes(pg);
+        if (afg === "カフェ") return ["カフェ", "喫茶", "珈琲", "スイーツ"].includes(pg);
+        return false;
+      })
+    );
+    if (matched) {
+      targetGenre = matched;
+    } else {
+      targetGenre = place.genres[0] || place.genre || "その他";
+    }
+  } else if (place.genres && place.genres.length > 0) {
+    targetGenre = place.genres[0]; // 案1: 代表ジャンル
+  }
+
+  const style = getGenreStyle(targetGenre, place.isVegan);
   const pinId = `pin-${place.id.replace(/[^a-zA-Z0-9]/g, "")}`;
 
   const transformClass = isSelected
@@ -288,7 +322,11 @@ const MapAutoBounds: React.FC<{ places: Place[]; selectedPlaceId?: string | null
   return null;
 };
 
-export const Map: React.FC<MapProps> = ({ places, selectedPlaceId }) => {
+export const Map: React.FC<MapProps> = ({
+  places,
+  selectedPlaceId,
+  activeFilterGenres,
+}) => {
   // 初期表示の中心座標（東京中心、または店舗があれば最初の店舗）
   const validPlaces = places.filter(
     (p) => p.latitude !== null && p.longitude !== null
@@ -320,7 +358,11 @@ export const Map: React.FC<MapProps> = ({ places, selectedPlaceId }) => {
           <Marker
             key={place.id}
             position={[place.latitude!, place.longitude!]}
-            icon={createCustomPin(place, place.id === selectedPlaceId)}
+            icon={createCustomPin(
+              place,
+              place.id === selectedPlaceId,
+              activeFilterGenres
+            )}
           >
             <Popup className="custom-leaflet-popup" closeButton={true}>
               <PlacePopup place={place} />

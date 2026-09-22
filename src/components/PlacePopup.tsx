@@ -9,6 +9,13 @@ interface PlacePopupProps {
 }
 
 export const PlacePopup: React.FC<PlacePopupProps> = ({ place }) => {
+  const displayGenres =
+    place.genres && place.genres.length > 0
+      ? place.genres
+      : place.genre
+      ? [place.genre]
+      : [];
+
   return (
     <div className="w-72 max-w-[85vw] font-sans text-gray-800 p-1">
       {/* サムネイル画像 */}
@@ -21,18 +28,30 @@ export const PlacePopup: React.FC<PlacePopupProps> = ({ place }) => {
             className="w-full h-full object-cover"
             loading="lazy"
           />
-          {place.genre && (
-            <span className="absolute top-2 left-2 bg-black/60 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-              {place.genre}
-            </span>
+          {displayGenres.length > 0 && (
+            <div className="absolute top-2 left-2 flex flex-wrap gap-1 max-w-[90%]">
+              {displayGenres.map((g) => (
+                <span
+                  key={g}
+                  className="bg-black/70 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full shadow"
+                >
+                  {g}
+                </span>
+              ))}
+            </div>
           )}
         </div>
       ) : (
-        place.genre && (
-          <div className="mb-1.5">
-            <span className="inline-block bg-blue-50 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-blue-200">
-              {place.genre}
-            </span>
+        displayGenres.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {displayGenres.map((g) => (
+              <span
+                key={g}
+                className="bg-blue-50 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-blue-200"
+              >
+                {g}
+              </span>
+            ))}
           </div>
         )
       )}

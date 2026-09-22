@@ -6,6 +6,7 @@ export interface GooglePlaceSearchResult {
   longitude: number | null;
   mapsUrl: string;
   genre: string;
+  genres?: string[];
   photoUrl: string;
   googleRating?: number;
   website?: string;
@@ -59,12 +60,15 @@ const GENRE_TYPE_RULES: [string, string[]][] = [
   ]],
 ];
 
-export function mapGenre(types: string[] = [], name: string = ""): string {
+export function mapGenres(types: string[] = [], name: string = ""): string[] {
+  const matched = new Set<string>();
+
   // 1. 店名キーワードからの判定
   for (const [genre, keywords] of GENRE_KEYWORD_RULES) {
     for (const kw of keywords) {
       if (name.includes(kw)) {
-        return genre;
+        matched.add(genre);
+        break;
       }
     }
   }
@@ -74,12 +78,22 @@ export function mapGenre(types: string[] = [], name: string = ""): string {
   for (const [genre, gTypes] of GENRE_TYPE_RULES) {
     for (const t of gTypes) {
       if (typeSet.has(t)) {
-        return genre;
+        matched.add(genre);
+        break;
       }
     }
   }
 
-  return "その他";
+  if (matched.size === 0) {
+    return ["その他"];
+  }
+
+  return Array.from(matched);
+}
+
+export function mapGenre(types: string[] = [], name: string = ""): string {
+  const all = mapGenres(types, name);
+  return all[0] || "その他";
 }
 
 const DAY_ORDER = ["月", "火", "水", "木", "金", "土", "日"];

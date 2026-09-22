@@ -112,9 +112,17 @@ export default function HomePage() {
   // フィルター処理
   const filteredPlaces = useMemo(() => {
     return places.filter((place) => {
-      // ① ジャンルフィルター (複数選択: OR一致)
+      // ① ジャンルフィルター (複数選択: 店舗が持つジャンルのいずれかとマッチすればOK)
       if (filters.genres.length > 0) {
-        const matches = filters.genres.some((fg) => genreMatches(place.genre, fg));
+        const placeGenres =
+          place.genres && place.genres.length > 0
+            ? place.genres
+            : place.genre
+            ? [place.genre]
+            : [];
+        const matches = filters.genres.some((fg) =>
+          placeGenres.some((pg) => genreMatches(pg, fg))
+        );
         if (!matches) {
           return false;
         }
@@ -265,7 +273,11 @@ export default function HomePage() {
       )}
 
       {/* 地図本体 */}
-      <MapComponent places={filteredPlaces} selectedPlaceId={selectedPlaceId} />
+      <MapComponent
+        places={filteredPlaces}
+        selectedPlaceId={selectedPlaceId}
+        activeFilterGenres={filters.genres}
+      />
 
       {/* フローティング「+ 店舗を追加」ボタン (FAB) */}
       <div className="absolute bottom-6 right-5 sm:right-6 z-[1000]">

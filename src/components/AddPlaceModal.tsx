@@ -56,7 +56,7 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
 
   // 選択された店舗とフォーム状態
   const [selectedPlace, setSelectedPlace] = useState<GooglePlaceSearchResult | null>(null);
-  const [genre, setGenre] = useState("");
+  const [selectedGenres, setSelectedGenres] = useState<string[]>(["カフェ"]);
   const [visitDate, setVisitDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [rating, setRating] = useState("");
   const [notes, setNotes] = useState("");
@@ -69,6 +69,17 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
   const genreOptions = Array.from(new Set([...DEFAULT_GENRES, ...availableGenres])).filter(
     Boolean
   );
+
+  const toggleGenreChip = (g: string) => {
+    if (selectedGenres.includes(g)) {
+      // 最低1つは残す
+      if (selectedGenres.length > 1) {
+        setSelectedGenres(selectedGenres.filter((item) => item !== g));
+      }
+    } else {
+      setSelectedGenres([...selectedGenres, g]);
+    }
+  };
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -104,7 +115,11 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
 
   const handleSelectCandidate = (place: GooglePlaceSearchResult) => {
     setSelectedPlace(place);
-    setGenre(place.genre || "カフェ");
+    const initialGenres =
+      place.genres && place.genres.length > 0
+        ? place.genres
+        : [place.genre || "カフェ"];
+    setSelectedGenres(initialGenres);
     setStep("confirm");
     setSubmitError(null);
   };
@@ -128,7 +143,8 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           place: selectedPlace,
-          genre,
+          genre: selectedGenres[0] || "その他",
+          genres: selectedGenres,
           visitDate,
           rating,
           notes,
@@ -328,23 +344,47 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
 
                 {/* フォーム入力欄 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* ジャンル選択 */}
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1 mb-1">
-                      <Utensils className="w-3.5 h-3.5 text-amber-500" />
-                      <span>ジャンル</span>
-                    </label>
-                    <select
-                      value={genre}
-                      onChange={(e) => setGenre(e.target.value)}
-                      className="w-full text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                    >
-                      {genreOptions.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                    </select>
+                  {/* ジャンル選択 (複数選択チップ) */}
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                        <Utensils className="w-3.5 h-3.5 text-amber-500" />
+                        <span>ジャンル</span>
+                        <span className="text-[10px] text-gray-400 font-normal ml-1">
+                          (複数選択可 / 先頭が代表ピン)
+                        </span>
+                      </label>
+                      <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                        {selectedGenres.length}個選択中
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {genreOptions.map((g, idx) => {
+                        const isSelected = selectedGenres.includes(g);
+                        const isPrimary = selectedGenres[0] === g;
+                        return (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => toggleGenreChip(g)}
+                            className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border transition-all active:scale-95 ${
+                              isSelected
+                                ? isPrimary
+                                  ? "bg-blue-600 text-white border-blue-600 shadow-sm font-bold ring-2 ring-blue-300 dark:ring-blue-800"
+                                  : "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 font-medium"
+                                : "bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100"
+                            }`}
+                          >
+                            <span>{g}</span>
+                            {isPrimary && (
+                              <span className="text-[9px] bg-white/20 px-1 rounded text-white">
+                                代表
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* 訪問日 */}

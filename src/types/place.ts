@@ -6,6 +6,7 @@ export interface Place {
   longitude: number | null;
   rating?: string;
   genre?: string;
+  genres?: string[];
   openDays: string[];
   timeSlots: string[];
   openHour?: number;

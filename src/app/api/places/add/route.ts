@@ -18,12 +18,14 @@ export async function POST(request: Request) {
     const {
       place,
       genre,
+      genres,
       visitDate,
       rating,
       notes,
     }: {
       place: GooglePlaceSearchResult;
       genre?: string;
+      genres?: string[];
       visitDate?: string;
       rating?: string;
       notes?: string;
@@ -180,14 +182,24 @@ export async function POST(request: Request) {
       });
     }
 
-    // プロパティの設定
-    const finalGenre = genre || place.genre || "その他";
+    // ジャンル（複数対応 & 代表ジャンル判定）
+    const finalGenres: string[] =
+      genres && genres.length > 0
+        ? genres
+        : genre
+        ? [genre]
+        : place.genres && place.genres.length > 0
+        ? place.genres
+        : [place.genre || "その他"];
+    const primaryGenre = finalGenres[0] || "その他";
+
+    // プロパティの設定 (まずは multi_select 形式で構築)
     const properties: Record<string, any> = {
       名前: {
         title: [{ text: { content: place.name } }],
       },
       ジャンル: {
-        select: { name: finalGenre },
+        multi_select: finalGenres.map((g) => ({ name: g })),
       },
     };
 
@@ -298,7 +310,7 @@ export async function POST(request: Request) {
       };
     }
 
-    const notionRes = await fetch("https://api.notion.com/v1/pages", {
+    let notionRes = await fetch("https://api.notion.com/v1/pages", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${notionToken}`,
@@ -308,13 +320,32 @@ export async function POST(request: Request) {
       body: JSON.stringify(payload),
     });
 
+    // もし Notion 側のジャンル列が select 型だった場合の自動フォールバック
     if (!notionRes.ok) {
-      const errText = await notionRes.text();
-      console.error("Notion page creation error:", notionRes.status, errText);
-      return NextResponse.json(
-        { error: `Notion登録エラー (${notionRes.status}): ${errText}` },
-        { status: notionRes.status }
-      );
+      const firstErr = await notionRes.text();
+      if (firstErr.includes("ジャンル") || firstErr.includes("select") || firstErr.includes("validation_error")) {
+        console.log("Retrying Notion page creation with select property for ジャンル...");
+        payload.properties["ジャンル"] = {
+          select: { name: primaryGenre },
+        };
+        notionRes = await fetch("https://api.notion.com/v1/pages", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${notionToken}`,
+            "Notion-Version": "2022-06-28",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+      if (!notionRes.ok) {
+        const errText = await notionRes.text();
+        console.error("Notion page creation error:", notionRes.status, errText);
+        return NextResponse.json(
+          { error: `Notion登録エラー (${notionRes.status}): ${errText}` },
+          { status: notionRes.status }
+        );
+      }
     }
 
     const createdPage = await notionRes.json();
@@ -343,7 +374,8 @@ export async function POST(request: Request) {
       latitude: place.latitude,
       longitude: place.longitude,
       rating: rating || "",
-      genre: finalGenre,
+      genre: primaryGenre,
+      genres: finalGenres,
       openDays: place.openDays || [],
       timeSlots: place.timeSlots || [],
       closeHour: place.latestCloseHour,

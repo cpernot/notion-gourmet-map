@@ -116,8 +116,17 @@ export async function GET() {
         // 5. 評価
         const rating = props["評価"]?.select?.name || "";
 
-        // 6. ジャンル
-        const genre = props["ジャンル"]?.select?.name || "その他";
+        // 6. ジャンル (multi_select または select の両方に対応)
+        let genres: string[] = [];
+        if (props["ジャンル"]?.multi_select) {
+          genres = props["ジャンル"].multi_select.map((o: { name: string }) => o.name);
+        } else if (props["ジャンル"]?.select?.name) {
+          genres = [props["ジャンル"].select.name];
+        }
+        if (genres.length === 0) {
+          genres = ["その他"];
+        }
+        const genre = genres[0] || "その他";
 
         // 7. 営業曜日
         const openDays: string[] =
@@ -234,6 +243,7 @@ export async function GET() {
           longitude,
           rating,
           genre,
+          genres,
           openDays,
           timeSlots,
           openHour,
