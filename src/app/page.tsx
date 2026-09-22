@@ -153,23 +153,27 @@ export default function HomePage() {
     return [...defaultList, ...Array.from(extraGenres)];
   }, [places]);
 
-  // 旧ジャンルから新ジャンルへの包括判定マップ
+  // 旧ジャンルから新ジャンルへの包括判定マップ（前後の空白や絵文字にも柔軟に対応）
   const genreMatches = (placeGenre: string = "", filterGenre: string): boolean => {
-    if (placeGenre === filterGenre) return true;
-    if (filterGenre === "昼ごはん") {
-      return ["昼ごはん", "イタリアン", "パスタ", "ピザ", "フレンチ", "洋食", "ランチ"].includes(placeGenre);
+    const pg = placeGenre.trim();
+    const fg = filterGenre.trim();
+    if (pg === fg) return true;
+    if (pg.includes(fg) || fg.includes(pg)) return true;
+
+    if (fg === "昼ごはん") {
+      return ["昼ごはん", "イタリアン", "パスタ", "ピザ", "フレンチ", "洋食", "ランチ"].some((k) => pg.includes(k));
     }
-    if (filterGenre === "夜ごはん") {
-      return ["夜ごはん", "ラーメン", "和食", "居酒屋", "焼肉", "中華", "寿司", "ディナー"].includes(placeGenre);
+    if (fg === "夜ごはん") {
+      return ["夜ごはん", "ラーメン", "和食", "居酒屋", "焼肉", "中華", "寿司", "ディナー"].some((k) => pg.includes(k));
     }
-    if (filterGenre === "パン屋") {
-      return ["パン屋", "ベーカリー", "パン"].includes(placeGenre);
+    if (fg === "パン屋") {
+      return ["パン屋", "ベーカリー", "パン"].some((k) => pg.includes(k));
     }
-    if (filterGenre === "朝ごはん") {
-      return ["朝ごはん", "モーニング", "朝食"].includes(placeGenre);
+    if (fg === "朝ごはん") {
+      return ["朝ごはん", "モーニング", "朝食"].some((k) => pg.includes(k));
     }
-    if (filterGenre === "カフェ") {
-      return ["カフェ", "喫茶", "スイーツ"].includes(placeGenre);
+    if (fg === "カフェ") {
+      return ["カフェ", "喫茶", "スイーツ"].some((k) => pg.includes(k));
     }
     return false;
   };
