@@ -22,6 +22,7 @@ interface AddPlaceModalProps {
   onClose: () => void;
   onPlaceAdded: (place: Place) => void;
   availableGenres: string[];
+  adminKey?: string | null;
 }
 
 const DEFAULT_GENRES = [
@@ -47,6 +48,7 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
   onClose,
   onPlaceAdded,
   availableGenres,
+  adminKey,
 }) => {
   const [step, setStep] = useState<"search" | "confirm">("search");
   const [query, setQuery] = useState("");
@@ -148,6 +150,7 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
           visitDate,
           rating,
           notes,
+          adminKey,
         }),
       });
 

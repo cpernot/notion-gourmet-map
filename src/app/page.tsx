@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { Place, FilterState } from "@/types/place";
 import { FilterBar } from "@/components/FilterBar";
 import { AddPlaceModal } from "@/components/AddPlaceModal";
-import { Loader2, AlertCircle, RefreshCw, Plus, CheckCircle2 } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw, Plus, CheckCircle2, ShieldCheck, LogOut } from "lucide-react";
 
 // LeafletはSSRでエラーになるため、next/dynamicで動的インポート
 const MapComponent = dynamic(() => import("@/components/Map"), {
@@ -27,6 +27,10 @@ export default function HomePage() {
   // 店舗登録モーダルとトースト状態
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // 管理者モード管理（方式 1: シークレットURL ?admin=KEY）
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminKey, setAdminKey] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<FilterState>({
     genres: [],
@@ -59,7 +63,68 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchPlaces();
+
+    // 管理者キーの判定・検証
+    const checkAdminStatus = async () => {
+      if (typeof window === "undefined") return;
+
+      const params = new URLSearchParams(window.location.search);
+      const urlAdminKey = params.get("admin");
+
+      // ログアウト指示 ?admin=logout
+      if (urlAdminKey === "logout") {
+        localStorage.removeItem("mogu_admin_key");
+        setIsAdmin(false);
+        setAdminKey(null);
+        window.history.replaceState({}, "", window.location.pathname);
+        setToastMessage("管理者モードを解除しました");
+        setTimeout(() => setToastMessage(null), 3000);
+        return;
+      }
+
+      // URL指定がある場合、検証して保存
+      const candidateKey = urlAdminKey || localStorage.getItem("mogu_admin_key");
+      if (!candidateKey) return;
+
+      try {
+        const res = await fetch(`/api/auth/verify?key=${encodeURIComponent(candidateKey)}`);
+        const data = await res.json();
+
+        if (data.valid) {
+          setIsAdmin(true);
+          setAdminKey(candidateKey);
+          localStorage.setItem("mogu_admin_key", candidateKey);
+
+          // URLパラメータを非表示にしてURLをスッキリさせる
+          if (urlAdminKey) {
+            window.history.replaceState({}, "", window.location.pathname);
+            setToastMessage("管理者モードで認証されました（店舗登録が可能です）");
+            setTimeout(() => setToastMessage(null), 4000);
+          }
+        } else if (urlAdminKey) {
+          setToastMessage("管理者キーが無効です");
+          setTimeout(() => setToastMessage(null), 4000);
+        } else {
+          // 保存キーが無効化された場合
+          localStorage.removeItem("mogu_admin_key");
+          setIsAdmin(false);
+          setAdminKey(null);
+        }
+      } catch (e) {
+        console.error("Auth check failed:", e);
+      }
+    };
+
+    checkAdminStatus();
   }, []);
+
+  const handleLogoutAdmin = () => {
+    localStorage.removeItem("mogu_admin_key");
+    setIsAdmin(false);
+    setAdminKey(null);
+    setToastMessage("管理者モードを解除しました");
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // 新規店舗が登録されたときのハンドラー
   const handlePlaceAdded = (newPlace: Place) => {
@@ -279,17 +344,33 @@ export default function HomePage() {
         activeFilterGenres={filters.genres}
       />
 
-      {/* フローティング「+ 店舗を追加」ボタン (FAB) */}
-      <div className="absolute bottom-6 right-5 sm:right-6 z-[1000]">
-        <button
-          type="button"
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-3 rounded-full shadow-2xl shadow-blue-500/40 border border-white/20 active:scale-95 transition-all"
-        >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-          <span>店舗を登録</span>
-        </button>
-      </div>
+      {/* 管理者専用: フローティング「+ 店舗を登録」ボタン & 管理者バッジ */}
+      {isAdmin && (
+        <div className="absolute bottom-6 right-5 sm:right-6 z-[1000] flex flex-col items-end gap-2">
+          {/* 管理者モードインジケーター */}
+          <div className="flex items-center gap-1.5 bg-gray-900/85 backdrop-blur-md border border-white/10 text-white px-2.5 py-1 rounded-full text-[10px] font-medium shadow-lg">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>管理者モード</span>
+            <button
+              type="button"
+              onClick={handleLogoutAdmin}
+              title="管理者モードを解除"
+              className="ml-1 text-gray-400 hover:text-rose-400 transition-colors p-0.5"
+            >
+              <LogOut className="w-3 h-3" />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-3 rounded-full shadow-2xl shadow-blue-500/40 border border-white/20 active:scale-95 transition-all"
+          >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>店舗を登録</span>
+          </button>
+        </div>
+      )}
 
       {/* 店舗登録モーダル */}
       <AddPlaceModal
@@ -297,6 +378,7 @@ export default function HomePage() {
         onClose={() => setIsAddModalOpen(false)}
         onPlaceAdded={handlePlaceAdded}
         availableGenres={availableGenres}
+        adminKey={adminKey}
       />
     </main>
   );

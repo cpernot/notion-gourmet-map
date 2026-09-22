@@ -13,6 +13,8 @@ export async function POST(request: Request) {
     );
   }
 
+  const serverSecret = process.env.ADMIN_SECRET_KEY;
+
   try {
     const body = await request.json();
     const {
@@ -22,6 +24,7 @@ export async function POST(request: Request) {
       visitDate,
       rating,
       notes,
+      adminKey,
     }: {
       place: GooglePlaceSearchResult;
       genre?: string;
@@ -29,7 +32,18 @@ export async function POST(request: Request) {
       visitDate?: string;
       rating?: string;
       notes?: string;
+      adminKey?: string;
     } = body;
+
+    // 管理者キーの検証 (サーバーにキーが設定されている場合のみ必須)
+    const headerAdminKey = request.headers.get("x-admin-key");
+    const providedKey = adminKey || headerAdminKey;
+    if (serverSecret && providedKey !== serverSecret) {
+      return NextResponse.json(
+        { error: "店舗を登録する管理者権限がありません。" },
+        { status: 403 }
+      );
+    }
 
     if (!place || !place.name) {
       return NextResponse.json(

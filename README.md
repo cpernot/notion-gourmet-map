@@ -108,6 +108,9 @@ NOTION_DATABASE_ID=31220569f69942cd97953494197dd918
 
 # 自前のGoogle APIキーを利用したい場合は設定（未設定の場合は共有プロキシが利用されます）
 GOOGLE_PLACES_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxx
+
+# 店舗登録を管理者のみに制限するためのシークレットキー
+ADMIN_SECRET_KEY=your_secret_admin_key
 ```
 
 ```bash
@@ -116,6 +119,19 @@ npm run dev
 ```
 
 ブラウザで [http://localhost:3000](http://localhost:3000) を開くと動作確認できます。
+
+---
+
+## 🔐 管理者（デプロイ者）と一般閲覧者の使い分け (方式 1)
+
+`ADMIN_SECRET_KEY` を設定することで、**「店舗を登録」ボタンを管理者だけに限定**できます。
+
+- **一般ユーザー（URLを共有された人）**:
+  - `https://your-domain.vercel.app` にアクセスすると、登録ボタンのない安全な閲覧専用モードになります。
+- **管理者（あなた）**:
+  - `https://your-domain.vercel.app?admin=あなたのシークレットキー` にアクセスすると、管理者認証され「+ 店舗を登録」ボタンが表示されます。
+  - 一度アクセスするとブラウザ（localStorage）に保存されるため、次回以降はキーの入力不要で利用できます（ホーム画面追加時も有効）。
+  - 管理者を解除（ログアウト）したい場合は、`?admin=logout` でアクセスするか、画面右下の管理者バッジの解除アイコンを押します。
 
 ---
 
