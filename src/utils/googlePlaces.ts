@@ -24,6 +24,35 @@ export interface GooglePlaceSearchResult {
   };
   isVegan: boolean;
   isVegetarian: boolean;
+  userRatingCount?: number;
+  businessStatus?: string;
+  latestReviewDate?: string;
+  chainType?: "チェーン店" | "個人店・単独店";
+}
+
+export const CHAIN_KEYWORDS = [
+  "coco壱番屋", "ココイチ", "クリスプ サラダ", "crisp salad", "一風堂", "大戸屋",
+  "スープストック", "soup stock", "サブウェイ", "subway", "モスバーガー", "mos burger",
+  "スターバックス", "starbucks", "ディーン&デルーカ", "dean & deluca",
+  "シティショップ", "cityshop", "city shop", "やさい家めい", "we are the farm",
+  "ミスターファーマー", "mr.farmer", "コスメキッチン", "cosme kitchen",
+  "ain soph", "アインソフ", "t's", "ティーズ", "2foods", "sky high", "スカイハイ",
+  "tokyo juice", "じゃんがら", "サンシャインジュース", "sunshine juice",
+  "falafel brothers", "ファラフェルブラザーズ", "ココナッツグレン", "coconut glen",
+  "healthytokyo"
+];
+
+export function determineChainType(name: string): "チェーン店" | "個人店・単独店" {
+  const lower = name.toLowerCase();
+  for (const kw of CHAIN_KEYWORDS) {
+    if (lower.includes(kw)) {
+      return "チェーン店";
+    }
+  }
+  if ((name.includes("店") || name.includes("号店")) && !name.includes("本店")) {
+    return "チェーン店";
+  }
+  return "個人店・単独店";
 }
 
 const GENRE_KEYWORD_RULES: [string, string[]][] = [

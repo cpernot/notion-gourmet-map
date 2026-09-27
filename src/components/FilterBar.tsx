@@ -30,6 +30,7 @@ const RATINGS: OptionItem[] = [
   { label: "★3", value: "3" },
   { label: "★2", value: "2" },
   { label: "★1", value: "1" },
+  { label: "★0 (未訪問)", value: "0" },
 ];
 
 const DAYS: OptionItem[] = [
@@ -122,18 +123,19 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 className="w-full h-full object-contain"
               />
             </div>
-            <div>
-              <h1 className="text-xs sm:text-sm font-black tracking-tight text-gray-900 dark:text-white leading-tight">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xs sm:text-sm font-black tracking-tight text-gray-900 dark:text-white leading-tight whitespace-nowrap">
                 mogu.
               </h1>
-              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-                <span>
-                  該当: <strong className="text-blue-600 dark:text-blue-400 font-bold">{count}</strong> / {total} 件
-                </span>
-                {hasActiveFilters && (
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                )}
-              </div>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50 whitespace-nowrap">
+                {count}/{total}
+              </span>
+              {hasActiveFilters && (
+                <span
+                  className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"
+                  title="フィルター適用中"
+                />
+              )}
             </div>
           </div>
 

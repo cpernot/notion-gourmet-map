@@ -7,16 +7,19 @@ export interface Place {
   rating?: string;
   genre?: string;
   genres?: string[];
+  cuisineGenres?: string[];
   openDays: string[];
   timeSlots: string[];
   openHour?: number;
   closeHour?: number;
   isVegan: boolean;
+  isAllVegan?: boolean;
   isVegetarian: boolean;
   isChain: boolean;
   parking: string[];
   coverUrl?: string;
   mapsUrl?: string;
+  websiteUrl?: string;
   notionUrl: string;
   phone?: string;
 }

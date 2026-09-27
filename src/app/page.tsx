@@ -203,11 +203,15 @@ export default function HomePage() {
         const placeStars = ratingMatch ? parseFloat(ratingMatch[0]) : 0;
         const matchesAnyRating = filters.ratings.some((r) => {
           const target = parseInt(r, 10);
+          if (target === 0) {
+            // ★0 (未訪問 / 未評価): 評価が空、または0、または未評価のテキストを含む
+            return !place.rating || place.rating.trim() === "" || placeStars === 0 || place.rating.includes("未");
+          }
           if (target === 5) return placeStars >= 4.8;
           if (target === 4) return placeStars >= 3.8 && placeStars < 4.8;
           if (target === 3) return placeStars >= 2.8 && placeStars < 3.8;
           if (target === 2) return placeStars >= 1.8 && placeStars < 2.8;
-          if (target === 1) return placeStars < 1.8;
+          if (target === 1) return placeStars > 0 && placeStars < 1.8;
           return false;
         });
         if (!matchesAnyRating) return false;

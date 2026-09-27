@@ -229,9 +229,9 @@ const createCustomPin = (
     ? `<circle cx="19" cy="18" r="18" stroke="${style.topColor}" stroke-width="3" stroke-opacity="0.6" fill="none" class="animate-ping"/>`
     : "";
 
-  const veganBadge = place.isVegan
+  const veganBadge = place.isAllVegan
     ? `
-      <!-- ヴィーガン対応バッジ（右肩の小さなグリーンリーフ） -->
+      <!-- 全てヴィーガン対応バッジ（右肩の小さなグリーンリーフ） -->
       <g transform="translate(24, 0)">
         <circle cx="6" cy="6" r="5.5" fill="#10B981" stroke="#FFFFFF" stroke-width="1.5"/>
         <path d="M8.5 3.5C6.5 3.5 5 4.8 5 6.8c0 .8.2 1.4.6 1.8-.4-.4-.6-1-.6-1.8 0 0 0-1.2 1.2-1.6 0 0-1.2 1.6 0 2.8 0 0 .8-1.2 2.3-1.8.6-.2.8-1.2.8-1.2z" fill="#FFFFFF"/>
@@ -282,27 +282,34 @@ const createCustomPin = (
 };
 
 // フィルター変更または店舗選択時に地図の表示範囲・中心を自動調整する補助コンポーネント
+// ※ユーザーがフィルター（ボタン・項目等）を変更しても現在のズームや位置がリセットされないよう、初期表示時のみfitBoundsを実行します
 const MapAutoBounds: React.FC<{ places: Place[]; selectedPlaceId?: string | null }> = ({
   places,
   selectedPlaceId,
 }) => {
   const map = useMap();
+  const hasInitializedRef = React.useRef(false);
 
+  // 1. 店舗カード等をクリックして特定店舗が選択された時は、その店舗へスムーズにズーム移動
   useEffect(() => {
-    if (selectedPlaceId) {
-      const target = places.find((p) => p.id === selectedPlaceId);
-      if (target?.latitude && target?.longitude) {
-        map.flyTo([target.latitude, target.longitude], 16, { duration: 1.0 });
-        return;
-      }
+    if (!selectedPlaceId) return;
+    const target = places.find((p) => p.id === selectedPlaceId);
+    if (target?.latitude && target?.longitude) {
+      map.flyTo([target.latitude, target.longitude], 16, { duration: 1.0 });
     }
+  }, [selectedPlaceId, places, map]);
 
+  // 2. 初回データロード時のみ、全店舗が収まるように地図範囲を調整
+  //    以降のフィルター変更ではズーム・位置を維持する
+  useEffect(() => {
+    if (hasInitializedRef.current) return;
     if (places.length === 0) return;
 
     if (places.length === 1 && places[0].latitude && places[0].longitude) {
       map.flyTo([places[0].latitude, places[0].longitude], 15, {
         duration: 0.8,
       });
+      hasInitializedRef.current = true;
       return;
     }
 
@@ -316,10 +323,121 @@ const MapAutoBounds: React.FC<{ places: Place[]; selectedPlaceId?: string | null
         padding: [60, 60],
         maxZoom: 16,
       });
+      hasInitializedRef.current = true;
     }
-  }, [places, selectedPlaceId, map]);
+  }, [places, map]);
 
   return null;
+};
+
+// 現在地マーカー（脈動アニメーション付きのブルーサークル）
+const createCurrentLocationIcon = () => {
+  return L.divIcon({
+    className: "current-location-marker",
+    html: `
+      <div style="position: relative; width: 24px; height: 24px;">
+        <div style="position: absolute; width: 24px; height: 24px; border-radius: 50%; background: rgba(37, 99, 235, 0.3); animation: loc-pulse 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;"></div>
+        <div style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; border-radius: 50%; background: #2563EB; border: 3px solid #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.35);"></div>
+      </div>
+      <style>
+        @keyframes loc-pulse {
+          0% { transform: scale(0.6); opacity: 0.9; }
+          70% { transform: scale(2.0); opacity: 0; }
+          100% { transform: scale(2.0); opacity: 0; }
+        }
+      </style>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+};
+
+// 現在地取得ボタンコンポーネント
+const LocateControl: React.FC = () => {
+  const map = useMap();
+  const [loading, setLoading] = React.useState(false);
+  const [currentPos, setCurrentPos] = React.useState<[number, number] | null>(null);
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) {
+      alert("お使いのブラウザは位置情報に対応していません。");
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLoading(false);
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setCurrentPos([lat, lng]);
+        map.flyTo([lat, lng], 15, {
+          duration: 1.2,
+        });
+      },
+      (err) => {
+        setLoading(false);
+        console.error("位置情報取得エラー:", err);
+        if (err.code === err.PERMISSION_DENIED) {
+          alert("位置情報の利用が許可されていません。ブラウザのアドレスバー付近の設定から位置情報を許可してください。");
+        } else {
+          alert("現在地を取得できませんでした。電波やWi-Fiの良好な場所でお試しください。");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  return (
+    <>
+      {currentPos && (
+        <Marker position={currentPos} icon={createCurrentLocationIcon()}>
+          <Popup className="custom-leaflet-popup" closeButton={false}>
+            <div className="text-center font-bold text-xs py-0.5 text-blue-700">
+              📍 あなたの現在地
+            </div>
+          </Popup>
+        </Marker>
+      )}
+
+      {/* 右下のフローティング現在地ボタン */}
+      <div
+        className="leaflet-bottom leaflet-right"
+        style={{ pointerEvents: "auto", marginBottom: "28px", marginRight: "16px", zIndex: 999 }}
+      >
+        <button
+          type="button"
+          onClick={handleLocate}
+          disabled={loading}
+          title="現在地を表示"
+          className="flex items-center justify-center w-11 h-11 bg-white text-gray-700 hover:text-blue-600 rounded-full shadow-lg border border-gray-200/80 hover:bg-gray-50 active:scale-90 transition-all duration-150 disabled:opacity-50"
+        >
+          {loading ? (
+            <svg
+              className="animate-spin w-5 h-5 text-blue-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          ) : (
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v3m0 14v3M2 12h3m14 0h3" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </>
+  );
 };
 
 export const Map: React.FC<MapProps> = ({
@@ -353,6 +471,8 @@ export const Map: React.FC<MapProps> = ({
         />
 
         <MapAutoBounds places={validPlaces} selectedPlaceId={selectedPlaceId} />
+
+        <LocateControl />
 
         {validPlaces.map((place) => (
           <Marker

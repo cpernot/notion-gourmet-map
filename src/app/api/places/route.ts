@@ -130,6 +130,17 @@ export async function GET() {
         }
         const genre = genres[0] || "その他";
 
+        // 6.5. 料理ジャンル (未登録・プロパティなしでも安全にスキップ)
+        let cuisineGenres: string[] | undefined = undefined;
+        const cuisineProp = props["料理ジャンル"] || props["ジャンル２"] || props["料理カテゴリ"];
+        if (cuisineProp?.multi_select && cuisineProp.multi_select.length > 0) {
+          cuisineGenres = cuisineProp.multi_select
+            .map((o: { name: string }) => o.name?.trim())
+            .filter(Boolean);
+        } else if (cuisineProp?.select?.name) {
+          cuisineGenres = [cuisineProp.select.name.trim()];
+        }
+
         // 7. 営業曜日
         const openDays: string[] =
           props["営業曜日"]?.multi_select?.map((o: { name: string }) => o.name) || [];
@@ -144,10 +155,12 @@ export async function GET() {
 
         // 10. 食事対応 / ビーガン・ベジタリアン
         const dietaryList: string[] = [
+          ...(props["ヴィーガン"]?.multi_select?.map((o: { name: string }) => o.name) || []),
           ...(props["食事対応"]?.multi_select?.map((o: { name: string }) => o.name) || []),
           ...(props["ヴィーガン・ベジタリアン"]?.multi_select?.map((o: { name: string }) => o.name) || []),
         ];
         const veganSelectName =
+          props["ヴィーガン"]?.select?.name ||
           props["ヴィーガン・ベジタリアン"]?.select?.name ||
           props["ビーガン・ベジタリアン"]?.select?.name ||
           props["食事対応"]?.select?.name ||
@@ -172,6 +185,14 @@ export async function GET() {
               !d.includes("不明") &&
               !d.includes("なし")
           );
+
+        const isAllVegan = dietaryList.some(
+          (d) =>
+            d.includes("全てヴィーガン") ||
+            d.includes("全品ヴィーガン") ||
+            d.toLowerCase().includes("all vegan") ||
+            d.toLowerCase().includes("100% vegan")
+        );
 
         const isVegetarian =
           isVegan ||
@@ -199,6 +220,8 @@ export async function GET() {
         ];
 
         const isChainProp =
+          Boolean(props["店舗形態"]?.select?.name?.includes("チェーン")) ||
+          Boolean(props["店舗形態"]?.multi_select?.some((o: { name: string }) => o.name?.includes("チェーン"))) ||
           Boolean(props["チェーン店"]?.checkbox) ||
           Boolean(props["チェーン"]?.checkbox) ||
           Boolean(props["チェーン店"]?.select?.name?.includes("チェーン")) ||
@@ -237,6 +260,14 @@ export async function GET() {
         // 13. NotionページURL
         const notionUrl = page.url || `https://www.notion.so/${page.id.replace(/-/g, "")}`;
 
+        // 14. 公式サイトURL
+        const websiteUrl =
+          props["公式サイト"]?.url ||
+          props["公式URL"]?.url ||
+          props["URL"]?.url ||
+          props["Webサイト"]?.url ||
+          undefined;
+
         places.push({
           id: page.id,
           name,
@@ -246,16 +277,19 @@ export async function GET() {
           rating,
           genre,
           genres,
+          cuisineGenres,
           openDays,
           timeSlots,
           openHour,
           closeHour,
           isVegan,
+          isAllVegan,
           isVegetarian,
           isChain,
           parking,
           coverUrl,
           mapsUrl,
+          websiteUrl,
           notionUrl,
         });
       }

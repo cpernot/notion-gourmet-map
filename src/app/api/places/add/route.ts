@@ -25,6 +25,9 @@ export async function POST(request: Request) {
       rating,
       notes,
       adminKey,
+      chainType,
+      veganStatus,
+      website,
     }: {
       place: GooglePlaceSearchResult;
       genre?: string;
@@ -33,6 +36,9 @@ export async function POST(request: Request) {
       rating?: string;
       notes?: string;
       adminKey?: string;
+      chainType?: "チェーン店" | "個人店・単独店";
+      veganStatus?: "🌱 全てヴィーガン" | "🌱 ビーガン対応あり" | "未対応";
+      website?: string;
     } = body;
 
     // 管理者キーの検証 (サーバーにキーが設定されている場合のみ必須)
@@ -241,13 +247,33 @@ export async function POST(request: Request) {
       };
     }
 
-    if (place.photoUrl) {
+    // Google Places写真のCDN直リンク解決 (重複アクセス & 429防止)
+    let resolvedPhotoUrl = place.photoUrl || "";
+    const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
+    if (resolvedPhotoUrl && resolvedPhotoUrl.includes("places.googleapis.com") && googleApiKey) {
+      try {
+        const cdnFetchUrl = resolvedPhotoUrl.includes("skipHttpRedirect=true")
+          ? resolvedPhotoUrl
+          : `${resolvedPhotoUrl}&skipHttpRedirect=true`;
+        const photoRes = await fetch(cdnFetchUrl);
+        if (photoRes.ok) {
+          const photoData = await photoRes.json();
+          if (photoData.photoUri) {
+            resolvedPhotoUrl = photoData.photoUri;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not resolve CDN photoUri, using original URL:", err);
+      }
+    }
+
+    if (resolvedPhotoUrl) {
       properties["photo_url"] = {
         files: [
           {
             name: `${place.name}_photo.jpg`,
             type: "external",
-            external: { url: place.photoUrl },
+            external: { url: resolvedPhotoUrl },
           },
         ],
       };
@@ -277,26 +303,20 @@ export async function POST(request: Request) {
       };
     }
 
-    if (dietaryItems.length > 0) {
-      properties["食事対応"] = {
-        multi_select: dietaryItems.map((d) => ({ name: d })),
+    // 公式サイト (url)
+    const finalWebsite = (website !== undefined ? website : place.website)?.trim();
+    if (finalWebsite) {
+      properties["公式サイト"] = {
+        url: finalWebsite,
       };
     }
 
-    // ヴィーガン・ベジタリアン
-    if (place.isVegan) {
-      properties["ヴィーガン・ベジタリアン"] = {
-        select: { name: "🌱 ビーガン対応" },
-      };
-    } else if (place.isVegetarian) {
-      properties["ヴィーガン・ベジタリアン"] = {
-        select: { name: "🥗 ベジタリアン対応" },
-      };
-    } else {
-      properties["ヴィーガン・ベジタリアン"] = {
-        select: { name: "不明" },
-      };
-    }
+    // ヴィーガン (Notionの一本化プロパティ: '🌱 全てヴィーガン' | '🌱 ビーガン対応あり' | '未対応')
+    const finalVegan =
+      veganStatus || (place.isVegan ? "🌱 ビーガン対応あり" : "未対応");
+    properties["ヴィーガン"] = {
+      select: { name: finalVegan },
+    };
 
     // Latitude & Longitude (rich_text)
     if (typeof place.latitude === "number") {
@@ -310,6 +330,58 @@ export async function POST(request: Request) {
       };
     }
 
+    // Google評価 (number)
+    if (typeof place.googleRating === "number") {
+      properties["Google評価"] = {
+        number: place.googleRating,
+      };
+    }
+
+    // クチコミ件数 (number)
+    if (typeof place.userRatingCount === "number") {
+      properties["クチコミ件数"] = {
+        number: place.userRatingCount,
+      };
+    }
+
+    // 営業状況 (select)
+    let statusName = "🟢 存続";
+    if (place.businessStatus === "CLOSED_PERMANENTLY") {
+      statusName = "🔴 閉業 (CLOSED)";
+    } else if (place.businessStatus === "CLOSED_TEMPORARILY") {
+      statusName = "🟡 一時休業";
+    }
+    properties["営業状況"] = {
+      select: { name: statusName },
+    };
+
+    // 店舗形態 (select)
+    const finalChain = chainType || place.chainType || "個人店・単独店";
+    properties["店舗形態"] = {
+      select: { name: finalChain },
+    };
+
+    // 最新クチコミ日 (date)
+    if (place.latestReviewDate) {
+      properties["最新クチコミ日"] = {
+        date: { start: place.latestReviewDate },
+      };
+    }
+
+    // 最終同期日 (date: 登録日 = 今日のJST日付 YYYY-MM-DD)
+    const todayJST = new Intl.DateTimeFormat("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .format(new Date())
+      .replace(/\//g, "-");
+
+    properties["最終同期日"] = {
+      date: { start: todayJST },
+    };
+
     // Notion APIリクエスト
     const payload: any = {
       parent: { database_id: databaseId },
@@ -317,10 +389,10 @@ export async function POST(request: Request) {
       children,
     };
 
-    if (place.photoUrl) {
+    if (resolvedPhotoUrl) {
       payload.cover = {
         type: "external",
-        external: { url: place.photoUrl },
+        external: { url: resolvedPhotoUrl },
       };
     }
 
@@ -392,13 +464,14 @@ export async function POST(request: Request) {
       genres: finalGenres,
       openDays: place.openDays || [],
       timeSlots: place.timeSlots || [],
-      closeHour: place.latestCloseHour,
-      isVegan: place.isVegan,
-      isVegetarian: place.isVegetarian,
+      isVegan: finalVegan.includes("ヴィーガン") || finalVegan.includes("ビーガン"),
+      isAllVegan: finalVegan === "🌱 全てヴィーガン",
+      isVegetarian: place.isVegetarian || finalVegan.includes("ヴィーガン"),
       isChain,
       parking: parkingItems,
-      coverUrl: place.photoUrl || undefined,
+      coverUrl: resolvedPhotoUrl || undefined,
       mapsUrl: place.mapsUrl || undefined,
+      websiteUrl: finalWebsite || undefined,
       notionUrl,
       phone: place.phone,
     };

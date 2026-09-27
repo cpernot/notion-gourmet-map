@@ -4,6 +4,7 @@ import {
   mapGenres,
   extractOperatingSchedule,
   GooglePlaceSearchResult,
+  determineChainType,
 } from "@/utils/googlePlaces";
 
 export async function POST(request: Request) {
@@ -51,9 +52,9 @@ export async function POST(request: Request) {
       "X-Goog-Api-Key": apiKey,
       "X-Goog-FieldMask":
         "places.id,places.displayName,places.formattedAddress,places.types," +
-        "places.rating,places.googleMapsUri,places.photos,places.websiteUri," +
+        "places.rating,places.userRatingCount,places.businessStatus,places.googleMapsUri,places.photos,places.websiteUri," +
         "places.nationalPhoneNumber,places.regularOpeningHours," +
-        "places.parkingOptions,places.servesVegetarianFood,places.location",
+        "places.parkingOptions,places.servesVegetarianFood,places.location,places.reviews",
     };
 
     const payload = {
@@ -86,8 +87,23 @@ export async function POST(request: Request) {
       const mapsUrl = place.googleMapsUri || "";
       const types: string[] = place.types || [];
       const googleRating = typeof place.rating === "number" ? place.rating : undefined;
+      const userRatingCount = typeof place.userRatingCount === "number" ? place.userRatingCount : undefined;
+      const businessStatus = place.businessStatus || "OPERATIONAL";
       const website = place.websiteUri || undefined;
       const phone = place.nationalPhoneNumber || undefined;
+
+      // 最新クチコミ日 (YYYY-MM-DD)
+      let latestReviewDate: string | undefined = undefined;
+      if (Array.isArray(place.reviews) && place.reviews.length > 0) {
+        const sortedReviews = [...place.reviews].sort((a, b) =>
+          (b.publishTime || "").localeCompare(a.publishTime || "")
+        );
+        if (sortedReviews[0]?.publishTime) {
+          latestReviewDate = sortedReviews[0].publishTime.slice(0, 10);
+        }
+      }
+
+      const chainType = determineChainType(name);
 
       const loc = place.location || {};
       const latitude = typeof loc.latitude === "number" ? loc.latitude : null;
@@ -128,6 +144,10 @@ export async function POST(request: Request) {
         genres,
         photoUrl,
         googleRating,
+        userRatingCount,
+        businessStatus,
+        latestReviewDate,
+        chainType,
         website,
         phone,
         openingHours,

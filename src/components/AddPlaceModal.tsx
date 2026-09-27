@@ -15,6 +15,10 @@ import {
   ChevronLeft,
   CheckCircle,
   ExternalLink,
+  Store,
+  Check,
+  Globe,
+  Leaf,
 } from "lucide-react";
 
 interface AddPlaceModalProps {
@@ -59,6 +63,9 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
   // 選択された店舗とフォーム状態
   const [selectedPlace, setSelectedPlace] = useState<GooglePlaceSearchResult | null>(null);
   const [selectedGenres, setSelectedGenres] = useState<string[]>(["カフェ"]);
+  const [selectedChainType, setSelectedChainType] = useState<"チェーン店" | "個人店・単独店">("個人店・単独店");
+  const [selectedVegan, setSelectedVegan] = useState<"🌱 全てヴィーガン" | "🌱 ビーガン対応あり" | "未対応">("未対応");
+  const [website, setWebsite] = useState("");
   const [visitDate, setVisitDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [rating, setRating] = useState("");
   const [notes, setNotes] = useState("");
@@ -122,6 +129,26 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
         ? place.genres
         : [place.genre || "カフェ"];
     setSelectedGenres(initialGenres);
+    setSelectedChainType(place.chainType || "個人店・単独店");
+
+    // ヴィーガン区分の初期判定
+    let initialVegan: "🌱 全てヴィーガン" | "🌱 ビーガン対応あり" | "未対応" = "未対応";
+    if (place.isVegan) {
+      const lowerName = place.name.toLowerCase();
+      if (
+        lowerName.includes("all vegan") ||
+        lowerName.includes("100% vegan") ||
+        lowerName.includes("全てヴィーガン") ||
+        lowerName.includes("全品ヴィーガン")
+      ) {
+        initialVegan = "🌱 全てヴィーガン";
+      } else {
+        initialVegan = "🌱 ビーガン対応あり";
+      }
+    }
+    setSelectedVegan(initialVegan);
+    setWebsite(place.website || "");
+
     setStep("confirm");
     setSubmitError(null);
   };
@@ -147,6 +174,9 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
           place: selectedPlace,
           genre: selectedGenres[0] || "その他",
           genres: selectedGenres,
+          chainType: selectedChainType,
+          veganStatus: selectedVegan,
+          website: website.trim(),
           visitDate,
           rating,
           notes,
@@ -178,6 +208,8 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
     setSearchError(null);
     setSubmitError(null);
     setNotes("");
+    setWebsite("");
+    setSelectedVegan("未対応");
     onClose();
   };
 
@@ -268,19 +300,40 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
 
                     {/* 店舗概要 */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md">
                           {cand.genre}
                         </span>
-                        {cand.googleRating && (
+                        {cand.chainType && (
+                          <span
+                            className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                              cand.chainType === "チェーン店"
+                                ? "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                            }`}
+                          >
+                            {cand.chainType}
+                          </span>
+                        )}
+                        {typeof cand.googleRating === "number" && (
                           <span className="flex items-center gap-0.5 text-xs font-bold text-amber-500">
                             <Star className="w-3 h-3 fill-amber-400" />
                             {cand.googleRating}
+                            {typeof cand.userRatingCount === "number" && (
+                              <span className="text-[10px] text-gray-400 font-normal">
+                                ({cand.userRatingCount})
+                              </span>
+                            )}
                           </span>
                         )}
                         {cand.isVegan && (
                           <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
                             🌱 ビーガン
+                          </span>
+                        )}
+                        {cand.businessStatus === "CLOSED_PERMANENTLY" && (
+                          <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/50 px-1.5 py-0.5 rounded">
+                            🔴 閉業
                           </span>
                         )}
                       </div>
@@ -345,8 +398,164 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
                   </div>
                 </div>
 
+                {/* Notion追加プロパティ (Google連携データ) */}
+                <div className="bg-gray-50/80 dark:bg-gray-800/40 rounded-2xl p-3 border border-gray-200/80 dark:border-gray-800 space-y-2">
+                  <div className="text-[11px] font-bold text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                    <span>Notion連携データ (Google自動同期)</span>
+                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> 自動反映
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {/* Google評価 */}
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60">
+                      <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <span className="font-mono text-gray-400 text-[11px]">#</span> Google評価
+                      </span>
+                      <span className="font-bold text-amber-500 flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-amber-400" />
+                        {selectedPlace.googleRating ?? "-"}
+                      </span>
+                    </div>
+
+                    {/* クチコミ件数 */}
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60">
+                      <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <span className="font-mono text-gray-400 text-[11px]">#</span> クチコミ件数
+                      </span>
+                      <span className="font-bold text-gray-700 dark:text-gray-200">
+                        {typeof selectedPlace.userRatingCount === "number"
+                          ? `${selectedPlace.userRatingCount}件`
+                          : "-"}
+                      </span>
+                    </div>
+
+                    {/* 営業状況 */}
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60">
+                      <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <span className="text-[11px]">🔘</span> 営業状況
+                      </span>
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md text-[11px]">
+                        {selectedPlace.businessStatus === "CLOSED_PERMANENTLY"
+                          ? "🔴 閉業 (CLOSED)"
+                          : selectedPlace.businessStatus === "CLOSED_TEMPORARILY"
+                          ? "🟡 一時休業"
+                          : "🟢 存続"}
+                      </span>
+                    </div>
+
+                    {/* 最新クチコミ日 */}
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60">
+                      <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-gray-400" /> 最新クチコミ
+                      </span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200 text-[11px]">
+                        {selectedPlace.latestReviewDate || "-"}
+                      </span>
+                    </div>
+
+                    {/* 店舗形態 (切り替え可能) */}
+                    <div className="col-span-2 flex items-center justify-between p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60">
+                      <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <Store className="w-3.5 h-3.5 text-gray-400" /> 店舗形態
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedChainType("個人店・単独店")}
+                          className={`text-xs px-2.5 py-1 rounded-lg transition-all ${
+                            selectedChainType === "個人店・単独店"
+                              ? "bg-blue-600 text-white font-bold shadow-sm"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
+                          }`}
+                        >
+                          個人店・単独店
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedChainType("チェーン店")}
+                          className={`text-xs px-2.5 py-1 rounded-lg transition-all ${
+                            selectedChainType === "チェーン店"
+                              ? "bg-amber-600 text-white font-bold shadow-sm"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200"
+                          }`}
+                        >
+                          チェーン店
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 最終同期日 (登録日) */}
+                    <div className="col-span-2 flex items-center justify-between p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700/60">
+                      <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-gray-400" /> 最終同期日 (登録日)
+                      </span>
+                      <span className="font-semibold text-gray-900 dark:text-white text-xs">
+                        {new Date().toISOString().split("T")[0]}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 {/* フォーム入力欄 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* ヴィーガン区分 (選択・修正可能) */}
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                        <Leaf className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>ヴィーガン区分</span>
+                        <span className="text-[10px] text-gray-400 font-normal ml-1">
+                          (Notion「ヴィーガン」列に登録)
+                        </span>
+                      </label>
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                        {selectedVegan}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(["🌱 全てヴィーガン", "🌱 ビーガン対応あり", "未対応"] as const).map((v) => {
+                        const isSelected = selectedVegan === v;
+                        return (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => setSelectedVegan(v)}
+                            className={`text-xs py-2 px-1 rounded-xl border text-center font-medium transition-all active:scale-95 ${
+                              isSelected
+                                ? v.includes("全て")
+                                  ? "bg-emerald-600 text-white border-emerald-600 font-bold shadow-sm ring-2 ring-emerald-300 dark:ring-emerald-800"
+                                  : v.includes("対応あり")
+                                  ? "bg-emerald-500 text-white border-emerald-500 font-bold shadow-sm ring-2 ring-emerald-300 dark:ring-emerald-800"
+                                  : "bg-gray-700 dark:bg-gray-600 text-white border-gray-700 dark:border-gray-600 font-bold shadow-sm"
+                                : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700/60"
+                            }`}
+                          >
+                            {v}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 公式サイトURL */}
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1 mb-1">
+                      <Globe className="w-3.5 h-3.5 text-blue-500" />
+                      <span>公式サイト (任意)</span>
+                      <span className="text-[10px] text-gray-400 font-normal ml-1">
+                        (Notion「公式サイト」列に登録)
+                      </span>
+                    </label>
+                    <input
+                      type="url"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                      placeholder="https://example.com"
+                      className="w-full text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                   {/* ジャンル選択 (複数選択チップ) */}
                   <div className="sm:col-span-2">
                     <div className="flex items-center justify-between mb-1.5">
