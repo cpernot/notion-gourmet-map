@@ -21,6 +21,7 @@ const MapComponent = dynamic(() => import("@/components/Map"), {
 export default function HomePage() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
@@ -43,7 +44,11 @@ export default function HomePage() {
   });
 
   const fetchPlaces = async (isManual = false) => {
-    setIsLoading(true);
+    if (isManual) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const res = await fetch("/api/places");
@@ -63,6 +68,7 @@ export default function HomePage() {
       setError(msg);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -310,7 +316,7 @@ export default function HomePage() {
         total={places.length}
         availableGenres={availableGenres}
         onRefresh={() => fetchPlaces(true)}
-        isRefreshing={isLoading}
+        isRefreshing={isRefreshing}
       />
 
       {/* エラー表示バナー */}
