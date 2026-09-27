@@ -42,7 +42,7 @@ export default function HomePage() {
     parkingOnly: false,
   });
 
-  const fetchPlaces = async () => {
+  const fetchPlaces = async (isManual = false) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -52,7 +52,12 @@ export default function HomePage() {
         throw new Error(errorData.error || `HTTP error: ${res.status}`);
       }
       const data = await res.json();
-      setPlaces(data.places || []);
+      const loadedPlaces = data.places || [];
+      setPlaces(loadedPlaces);
+      if (isManual) {
+        setToastMessage(`Notionから最新データを取得しました（全 ${loadedPlaces.length} 件）`);
+        setTimeout(() => setToastMessage(null), 3500);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "店舗情報の取得に失敗しました。";
       setError(msg);
@@ -304,6 +309,8 @@ export default function HomePage() {
         count={filteredPlaces.length}
         total={places.length}
         availableGenres={availableGenres}
+        onRefresh={() => fetchPlaces(true)}
+        isRefreshing={isLoading}
       />
 
       {/* エラー表示バナー */}
@@ -315,7 +322,7 @@ export default function HomePage() {
           </div>
           <button
             type="button"
-            onClick={fetchPlaces}
+            onClick={() => fetchPlaces()}
             className="flex items-center gap-1 text-xs font-bold text-rose-700 hover:text-rose-900 bg-rose-100 px-2 py-1 rounded-lg"
           >
             <RefreshCw className="w-3 h-3" />

@@ -6,6 +6,7 @@ import { MultiSelectDropdown, OptionItem } from "./MultiSelectDropdown";
 import {
   Filter,
   RotateCcw,
+  RefreshCw,
   ChevronDown,
   ChevronUp,
   Building2,
@@ -22,6 +23,8 @@ interface FilterBarProps {
   count: number;
   total: number;
   availableGenres: string[];
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 const RATINGS: OptionItem[] = [
@@ -58,6 +61,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   count,
   total,
   availableGenres,
+  onRefresh,
+  isRefreshing = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -139,7 +144,26 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            {/* Notion最新データ再取得ボタン */}
+            {onRefresh && (
+              <button
+                type="button"
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-100 hover:bg-blue-50 dark:bg-gray-800 dark:hover:bg-blue-950/40 p-2 sm:px-2.5 sm:py-1.5 rounded-xl border border-gray-200/60 dark:border-gray-700 active:scale-90 transition-all disabled:opacity-50"
+                title="Notionから最新店舗データを再取得"
+                aria-label="Notionから最新店舗データを再取得"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${
+                    isRefreshing ? "animate-spin text-blue-600" : ""
+                  }`}
+                />
+                <span className="hidden sm:inline">更新</span>
+              </button>
+            )}
+
             {hasActiveFilters && (
               <button
                 type="button"
