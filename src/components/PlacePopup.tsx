@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Place } from "@/types/place";
-import { ExternalLink, MapPin, Clock, Star, Car, Leaf, Globe, Utensils } from "lucide-react";
+import { ExternalLink, MapPin, Clock, Star, Car, Leaf, Globe, Utensils, Dog } from "lucide-react";
 
 interface PlacePopupProps {
   place: Place;
@@ -119,6 +119,14 @@ export const PlacePopup: React.FC<PlacePopupProps> = ({ place }) => {
           <span className="inline-flex items-center text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded">
             <Car className="w-2.5 h-2.5 mr-0.5" />
             {place.parking[0]}
+          </span>
+        )}
+
+        {/* ペット可 */}
+        {place.petsAllowed && (
+          <span className="inline-flex items-center text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.5 rounded">
+            <Dog className="w-2.5 h-2.5 mr-0.5" />
+            ペット可
           </span>
         )}
 

@@ -15,6 +15,7 @@ import {
   Clock,
   Utensils,
   Star,
+  Dog,
 } from "lucide-react";
 
 interface FilterBarProps {
@@ -94,6 +95,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     onChange({ ...filters, parkingOnly: !filters.parkingOnly });
   };
 
+  const handlePetToggle = () => {
+    onChange({ ...filters, petOnly: !filters.petOnly });
+  };
+
   const handleReset = () => {
     onChange({
       genres: [],
@@ -103,6 +108,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       chainOnly: false,
       openNow: false,
       parkingOnly: false,
+      petOnly: false,
     });
   };
 
@@ -113,7 +119,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     filters.timeSlots.length > 0 ||
     filters.chainOnly ||
     filters.openNow ||
-    filters.parkingOnly;
+    filters.parkingOnly ||
+    filters.petOnly;
 
   return (
     <div className="absolute top-3 left-3 right-3 sm:left-1/2 sm:-translate-x-1/2 sm:w-auto max-w-[96vw] z-[1000]">
@@ -284,6 +291,20 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             >
               <Car className={`w-3.5 h-3.5 ${filters.parkingOnly ? "text-white" : "text-blue-600"}`} />
               <span>駐車場あり</span>
+            </button>
+
+            {/* ⑧ ペット可限定 */}
+            <button
+              type="button"
+              onClick={handlePetToggle}
+              className={`flex items-center justify-center gap-1 text-xs font-medium py-2 px-3 rounded-xl border transition-all active:scale-95 ${
+                filters.petOnly
+                  ? "bg-rose-600 text-white border-rose-600 shadow-sm shadow-rose-500/30"
+                  : "bg-gray-50 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              <Dog className={`w-3.5 h-3.5 ${filters.petOnly ? "text-white" : "text-rose-600"}`} />
+              <span>ペット可</span>
             </button>
           </div>
         </div>

@@ -19,6 +19,7 @@ import {
   Check,
   Globe,
   Leaf,
+  Dog,
 } from "lucide-react";
 
 interface AddPlaceModalProps {
@@ -65,6 +66,7 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
   const [selectedGenres, setSelectedGenres] = useState<string[]>(["カフェ"]);
   const [selectedChainType, setSelectedChainType] = useState<"チェーン店" | "個人店・単独店">("個人店・単独店");
   const [selectedVegan, setSelectedVegan] = useState<"🌱 全てヴィーガン" | "🌱 ビーガン対応あり" | "未対応">("未対応");
+  const [selectedPetFriendly, setSelectedPetFriendly] = useState(false);
   const [website, setWebsite] = useState("");
   const [visitDate, setVisitDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [rating, setRating] = useState("");
@@ -147,6 +149,7 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
       }
     }
     setSelectedVegan(initialVegan);
+    setSelectedPetFriendly(Boolean(place.allowsDogs));
     setWebsite(place.website || "");
 
     setStep("confirm");
@@ -156,6 +159,7 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
   const handleResetToSearch = () => {
     setStep("search");
     setSelectedPlace(null);
+    setSelectedPetFriendly(false);
     setSubmitError(null);
   };
 
@@ -176,6 +180,7 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
           genres: selectedGenres,
           chainType: selectedChainType,
           veganStatus: selectedVegan,
+          petsAllowed: selectedPetFriendly,
           website: website.trim(),
           visitDate,
           rating,
@@ -210,6 +215,7 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
     setNotes("");
     setWebsite("");
     setSelectedVegan("未対応");
+    setSelectedPetFriendly(false);
     onClose();
   };
 
@@ -329,6 +335,12 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
                         {cand.isVegan && (
                           <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
                             🌱 ビーガン
+                          </span>
+                        )}
+                        {cand.allowsDogs && (
+                          <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/50 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <Dog className="w-2.5 h-2.5" />
+                            ペット可
                           </span>
                         )}
                         {cand.businessStatus === "CLOSED_PERMANENTLY" && (
@@ -536,6 +548,47 @@ export const AddPlaceModal: React.FC<AddPlaceModalProps> = ({
                           </button>
                         );
                       })}
+                    </div>
+                  </div>
+
+                  {/* ペット可能 (選択・修正可能) */}
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                        <Dog className="w-3.5 h-3.5 text-rose-500" />
+                        <span>ペット同伴</span>
+                        <span className="text-[10px] text-gray-400 font-normal ml-1">
+                          (Notion「ペット可」列に登録)
+                        </span>
+                      </label>
+                      <span className={`text-[11px] font-bold ${selectedPetFriendly ? "text-rose-600 dark:text-rose-400" : "text-gray-400"}`}>
+                        {selectedPetFriendly ? "🐶 ペット同伴可" : "同伴不可 / 未確認"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPetFriendly(true)}
+                        className={`text-xs py-2 px-2 rounded-xl border text-center font-medium transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                          selectedPetFriendly
+                            ? "bg-rose-600 text-white border-rose-600 font-bold shadow-sm ring-2 ring-rose-300 dark:ring-rose-800"
+                            : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700/60"
+                        }`}
+                      >
+                        <Dog className="w-3.5 h-3.5" />
+                        <span>🐶 ペット可</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPetFriendly(false)}
+                        className={`text-xs py-2 px-2 rounded-xl border text-center font-medium transition-all active:scale-95 flex items-center justify-center gap-1.5 ${
+                          !selectedPetFriendly
+                            ? "bg-gray-700 dark:bg-gray-600 text-white border-gray-700 dark:border-gray-600 font-bold shadow-sm"
+                            : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700/60"
+                        }`}
+                      >
+                        <span>不可 / 未確認</span>
+                      </button>
                     </div>
                   </div>
 

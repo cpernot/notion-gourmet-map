@@ -24,6 +24,7 @@ export interface GooglePlaceSearchResult {
   };
   isVegan: boolean;
   isVegetarian: boolean;
+  allowsDogs?: boolean;
   userRatingCount?: number;
   businessStatus?: string;
   latestReviewDate?: string;

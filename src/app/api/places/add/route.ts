@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       chainType,
       veganStatus,
       website,
+      petsAllowed,
     }: {
       place: GooglePlaceSearchResult;
       genre?: string;
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
       chainType?: "チェーン店" | "個人店・単独店";
       veganStatus?: "🌱 全てヴィーガン" | "🌱 ビーガン対応あり" | "未対応";
       website?: string;
+      petsAllowed?: boolean;
     } = body;
 
     // 管理者キーの検証 (サーバーにキーが設定されている場合のみ必須)
@@ -57,6 +59,12 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    // ペット可能判定
+    const finalPetsAllowed =
+      typeof petsAllowed === "boolean"
+        ? petsAllowed
+        : Boolean(place.allowsDogs);
 
     // 駐車場タグの生成
     const parkingItems: string[] = [];
@@ -138,6 +146,16 @@ export async function POST(request: Request) {
         type: "bulleted_list_item",
         bulleted_list_item: {
           rich_text: [{ text: { content: `🍽️ 食事対応: ${dietaryItems.join(", ")}` } }],
+        },
+      });
+    }
+
+    if (finalPetsAllowed) {
+      children.push({
+        object: "block",
+        type: "bulleted_list_item",
+        bulleted_list_item: {
+          rich_text: [{ text: { content: "🐶 ペット同伴: 可" } }],
         },
       });
     }
@@ -318,6 +336,11 @@ export async function POST(request: Request) {
       select: { name: finalVegan },
     };
 
+    // ペット可 (checkbox)
+    properties["ペット可"] = {
+      checkbox: finalPetsAllowed,
+    };
+
     // Latitude & Longitude (rich_text)
     if (typeof place.latitude === "number") {
       properties["Latitude"] = {
@@ -406,14 +429,23 @@ export async function POST(request: Request) {
       body: JSON.stringify(payload),
     });
 
-    // もし Notion 側のジャンル列が select 型だった場合の自動フォールバック
+    // もし Notion 側のエラー（ジャンルやペット可など）が発生した場合の自動リトライ
     if (!notionRes.ok) {
       const firstErr = await notionRes.text();
+      let retry = false;
       if (firstErr.includes("ジャンル") || firstErr.includes("select") || firstErr.includes("validation_error")) {
         console.log("Retrying Notion page creation with select property for ジャンル...");
         payload.properties["ジャンル"] = {
           select: { name: primaryGenre },
         };
+        retry = true;
+      }
+      if (firstErr.includes("ペット可")) {
+        console.log("Retrying Notion page creation without ペット可 property...");
+        delete payload.properties["ペット可"];
+        retry = true;
+      }
+      if (retry) {
         notionRes = await fetch("https://api.notion.com/v1/pages", {
           method: "POST",
           headers: {
@@ -469,6 +501,7 @@ export async function POST(request: Request) {
       isVegetarian: place.isVegetarian || finalVegan.includes("ヴィーガン"),
       isChain,
       parking: parkingItems,
+      petsAllowed: finalPetsAllowed,
       coverUrl: resolvedPhotoUrl || undefined,
       mapsUrl: place.mapsUrl || undefined,
       websiteUrl: finalWebsite || undefined,

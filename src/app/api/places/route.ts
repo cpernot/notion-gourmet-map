@@ -241,6 +241,18 @@ export async function GET() {
           parking = [props["駐車場"].select.name];
         }
 
+        // 11.5. ペット可能判定
+        const petsAllowed =
+          Boolean(props["ペット可"]?.checkbox) ||
+          Boolean(props["ペット同伴"]?.checkbox) ||
+          Boolean(props["ペット"]?.checkbox) ||
+          Boolean(props["ペット可"]?.select?.name?.match(/可|OK|犬|同伴/i)) ||
+          Boolean(props["ペット"]?.select?.name?.match(/可|OK|犬|同伴/i)) ||
+          Boolean(props["ペット可"]?.multi_select?.some((o: { name: string }) => o.name?.match(/可|OK|犬|同伴/i))) ||
+          Boolean(props["ペット"]?.multi_select?.some((o: { name: string }) => o.name?.match(/可|OK|犬|同伴/i))) ||
+          Boolean(props["設備"]?.multi_select?.some((o: { name: string }) => o.name?.includes("ペット"))) ||
+          Boolean(props["特徴"]?.multi_select?.some((o: { name: string }) => o.name?.includes("ペット")));
+
         // 12. カバー写真
         let coverUrl: string | undefined = undefined;
         if (page.cover) {
@@ -287,6 +299,7 @@ export async function GET() {
           isVegetarian,
           isChain,
           parking,
+          petsAllowed,
           coverUrl,
           mapsUrl,
           websiteUrl,

@@ -41,6 +41,7 @@ export default function HomePage() {
     chainOnly: false,
     openNow: false,
     parkingOnly: false,
+    petOnly: false,
   });
 
   const fetchPlaces = async (isManual = false) => {
@@ -300,6 +301,11 @@ export default function HomePage() {
           (p) => p.includes("あり") || p.includes("無料") || p.includes("有料")
         );
         if (!hasParking) return false;
+      }
+
+      // ⑧ ペット可限定
+      if (filters.petOnly && !place.petsAllowed) {
+        return false;
       }
 
       return true;

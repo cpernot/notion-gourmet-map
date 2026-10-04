@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         "places.id,places.displayName,places.formattedAddress,places.types," +
         "places.rating,places.userRatingCount,places.businessStatus,places.googleMapsUri,places.photos,places.websiteUri," +
         "places.nationalPhoneNumber,places.regularOpeningHours," +
-        "places.parkingOptions,places.servesVegetarianFood,places.location,places.reviews",
+        "places.parkingOptions,places.servesVegetarianFood,places.location,places.reviews,places.allowsDogs",
     };
 
     const payload = {
@@ -133,6 +133,18 @@ export async function POST(request: Request) {
         types.includes("vegetarian_restaurant") ||
         isVegan;
 
+      const reviewsText = Array.isArray(place.reviews)
+        ? place.reviews.map((r: any) => r.text?.text || "").join(" ")
+        : "";
+      const lowerAll = (name + " " + reviewsText).toLowerCase();
+
+      const allowsDogs =
+        place.allowsDogs === true ||
+        types.includes("dog_cafe") ||
+        ["ドッグカフェ", "ペット可", "ペット同伴", "ペットok", "犬同伴", "愛犬"].some((kw) =>
+          lowerAll.includes(kw)
+        );
+
       return {
         id: place.id,
         name,
@@ -163,6 +175,7 @@ export async function POST(request: Request) {
         },
         isVegan,
         isVegetarian,
+        allowsDogs,
       };
     });
 

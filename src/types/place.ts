@@ -17,6 +17,7 @@ export interface Place {
   isVegetarian: boolean;
   isChain: boolean;
   parking: string[];
+  petsAllowed?: boolean;
   coverUrl?: string;
   mapsUrl?: string;
   websiteUrl?: string;
@@ -33,4 +34,5 @@ export interface FilterState {
   openNow: boolean;          // 今営業中のみ
   veganOnly?: boolean;
   parkingOnly: boolean;
+  petOnly: boolean;          // ペット可能のみ
 }
