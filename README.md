@@ -136,6 +136,30 @@ npm run dev
 
 ---
 
+## 🔄 定期運用・月次メンテナンス（一括同期）
+
+登録済み店舗の営業状況（存続・閉業・休業）や最新クチコミ、評価、ペット同伴情報は、Google Places APIと連携して定期的に一括更新できます。
+
+### 実行方法 (Windows)
+プロジェクト直下にある **`グルメ一括同期.bat`** をダブルクリックして実行するだけです。
+
+```bash
+# コマンドラインから直接実行する場合：
+python sync_notion_google_places.py
+```
+
+### 一括同期で自動更新される項目：
+1. **営業状況**: Google Placesの最新営業状況に基づき「🟢 存続 / 🔴 閉業 (CLOSED) / 🟡 一時休業」に自動更新
+2. **最新クチコミ日**: 直近に投稿されたクチコミの投稿日（YYYY-MM-DD）
+3. **最終同期日**: 実行した本日の日付（YYYY-MM-DD）
+4. **ペット可**: Google公式の `allowsDogs` および最新クチコミ（ドッグカフェ、ペット可、犬同伴等）から再判定
+5. **Google評価 & クチコミ件数**: 星評価と最新のレビュー件数
+
+> [!TIP]
+> 1ヶ月に1回程度 `グルメ一括同期.bat` を実行することで、知らぬ間に店舗が閉店していたり営業情報が変わっていたりするのを防ぎ、Notionおよび mogu. のデータを常に新鮮に保つことができます。
+
+---
+
 ## 🛠️ 技術スタック
 
 - **Framework**: Next.js 16 (App Router, TypeScript)
@@ -144,3 +168,4 @@ npm run dev
 - **Database & API**: Notion Official REST API, Google Places API (New)
 - **Geocoding**: 国土地理院 API (GSI) & OpenStreetMap Nominatim フォールバック
 - **Hosting**: Vercel (Edge / Tokyo hnd1 region)
+
