@@ -265,24 +265,15 @@ export async function POST(request: Request) {
       };
     }
 
-    // Google Places写真のCDN直リンク解決 (重複アクセス & 429防止)
+    // カバー画像URL (完全無料の静的リンク: ホットペッパーまたはプレースホルダー)
+    // ※ Google Places APIの写真（places.googleapis.com）は課金防止のため一切使用・通信しません
     let resolvedPhotoUrl = place.photoUrl || "";
-    const googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
-    if (resolvedPhotoUrl && resolvedPhotoUrl.includes("places.googleapis.com") && googleApiKey) {
-      try {
-        const cdnFetchUrl = resolvedPhotoUrl.includes("skipHttpRedirect=true")
-          ? resolvedPhotoUrl
-          : `${resolvedPhotoUrl}&skipHttpRedirect=true`;
-        const photoRes = await fetch(cdnFetchUrl);
-        if (photoRes.ok) {
-          const photoData = await photoRes.json();
-          if (photoData.photoUri) {
-            resolvedPhotoUrl = photoData.photoUri;
-          }
-        }
-      } catch (err) {
-        console.warn("Could not resolve CDN photoUri, using original URL:", err);
-      }
+    if (resolvedPhotoUrl.includes("places.googleapis.com")) {
+      resolvedPhotoUrl = "";
+    }
+    if (!resolvedPhotoUrl) {
+      resolvedPhotoUrl =
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80";
     }
 
     if (resolvedPhotoUrl) {
