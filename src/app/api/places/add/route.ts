@@ -231,42 +231,29 @@ export async function POST(request: Request) {
         : [place.genre || "その他"];
     const primaryGenre = finalGenres[0] || "その他";
 
-    // プロパティの設定 (まずは multi_select 形式で構築)
-    const properties: Record<string, any> = {
-      名前: {
-        title: [{ text: { content: place.name } }],
-      },
-      ジャンル: {
-        multi_select: finalGenres.map((g) => ({ name: g })),
-      },
-    };
-
-    if (place.address) {
-      properties["住所"] = {
-        rich_text: [{ text: { content: place.address } }],
-      };
+    // 1. Notion データベースの実際のプロパティ（スキーマ）を取得して安全に適応
+    let dbProperties: Record<string, any> = {};
+    try {
+      const dbRes = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
+        headers: {
+          Authorization: `Bearer ${notionToken}`,
+          "Notion-Version": "2022-06-28",
+        },
+        cache: "no-store",
+      });
+      if (dbRes.ok) {
+        const dbData = await dbRes.json();
+        dbProperties = dbData.properties || {};
+      }
+    } catch (e) {
+      console.warn("Notion DBスキーマの事前取得に失敗したため、動的リカバリーモードで実行します:", e);
     }
 
-    if (visitDate) {
-      properties["訪問日"] = {
-        date: { start: visitDate },
-      };
-    }
+    const hasDbSchema = Object.keys(dbProperties).length > 0;
+    const propExists = (name: string) => !hasDbSchema || Boolean(dbProperties[name]);
+    const propType = (name: string) => dbProperties[name]?.type;
 
-    if (rating) {
-      properties["評価"] = {
-        select: { name: rating },
-      };
-    }
-
-    if (place.mapsUrl) {
-      properties["マップ"] = {
-        url: place.mapsUrl,
-      };
-    }
-
-    // カバー画像URL (完全無料の静的リンク: ホットペッパーまたはプレースホルダー)
-    // ※ Google Places APIの写真（places.googleapis.com）は課金防止のため一切使用・通信しません
+    // カバー画像URL (静的リンク)
     let resolvedPhotoUrl = place.photoUrl || "";
     if (resolvedPhotoUrl.includes("places.googleapis.com")) {
       resolvedPhotoUrl = "";
@@ -276,7 +263,59 @@ export async function POST(request: Request) {
         "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80";
     }
 
-    if (resolvedPhotoUrl) {
+    // プロパティの設定 (Notionに存在する項目のみ安全にマッピング)
+    const properties: Record<string, any> = {};
+
+    // 名前 (必須: title)
+    if (propExists("名前")) {
+      properties["名前"] = {
+        title: [{ text: { content: place.name } }],
+      };
+    }
+
+    // ジャンル (multi_select または select の型に合わせて自動設定)
+    if (propExists("ジャンル")) {
+      if (propType("ジャンル") === "select") {
+        properties["ジャンル"] = {
+          select: { name: primaryGenre },
+        };
+      } else {
+        properties["ジャンル"] = {
+          multi_select: finalGenres.map((g) => ({ name: g })),
+        };
+      }
+    }
+
+    // 住所 (rich_text)
+    if (place.address && propExists("住所")) {
+      properties["住所"] = {
+        rich_text: [{ text: { content: place.address } }],
+      };
+    }
+
+    // 訪問日 (date)
+    if (visitDate && propExists("訪問日")) {
+      properties["訪問日"] = {
+        date: { start: visitDate },
+      };
+    }
+
+    // 評価 (select)
+    if (rating && propExists("評価")) {
+      properties["評価"] = {
+        select: { name: rating },
+      };
+    }
+
+    // マップ (url)
+    if (place.mapsUrl && propExists("マップ")) {
+      properties["マップ"] = {
+        url: place.mapsUrl,
+      };
+    }
+
+    // photo_url (files)
+    if (resolvedPhotoUrl && propExists("photo_url")) {
       properties["photo_url"] = {
         files: [
           {
@@ -288,113 +327,152 @@ export async function POST(request: Request) {
       };
     }
 
-    if (place.openDays && place.openDays.length > 0) {
+    // 営業曜日 (multi_select)
+    if (place.openDays && place.openDays.length > 0 && propExists("営業曜日")) {
       properties["営業曜日"] = {
         multi_select: place.openDays.map((d) => ({ name: d })),
       };
     }
 
-    if (place.timeSlots && place.timeSlots.length > 0) {
+    // 時間帯 (multi_select)
+    if (place.timeSlots && place.timeSlots.length > 0 && propExists("時間帯")) {
       properties["時間帯"] = {
         multi_select: place.timeSlots.map((t) => ({ name: t })),
       };
     }
 
-    if (typeof place.latestCloseHour === "number") {
+    // 閉店時間 (number)
+    if (typeof place.latestCloseHour === "number" && propExists("閉店時間")) {
       properties["閉店時間"] = {
         number: place.latestCloseHour,
       };
     }
 
-    if (parkingItems.length > 0) {
-      properties["駐車場"] = {
-        multi_select: parkingItems.map((p) => ({ name: p })),
-      };
+    // 駐車場 (multi_select または select)
+    if (parkingItems.length > 0 && propExists("駐車場")) {
+      if (propType("駐車場") === "select") {
+        properties["駐車場"] = {
+          select: { name: parkingItems[0] },
+        };
+      } else {
+        properties["駐車場"] = {
+          multi_select: parkingItems.map((p) => ({ name: p })),
+        };
+      }
     }
 
-    // 公式サイト (url)
+    // Latitude & Longitude (rich_text または number に自動適応)
+    if (typeof place.latitude === "number" && propExists("Latitude")) {
+      if (propType("Latitude") === "number") {
+        properties["Latitude"] = { number: place.latitude };
+      } else {
+        properties["Latitude"] = {
+          rich_text: [{ text: { content: String(place.latitude) } }],
+        };
+      }
+    }
+    if (typeof place.longitude === "number" && propExists("Longitude")) {
+      if (propType("Longitude") === "number") {
+        properties["Longitude"] = { number: place.longitude };
+      } else {
+        properties["Longitude"] = {
+          rich_text: [{ text: { content: String(place.longitude) } }],
+        };
+      }
+    }
+
+    // ヴィーガン関連 (Notionの列名に合わせて柔軟に適応)
+    const finalVegan =
+      veganStatus || (place.isVegan ? "🌱 ビーガン対応あり" : "未対応");
+
+    if (propExists("ヴィーガン")) {
+      properties["ヴィーガン"] = {
+        select: { name: finalVegan },
+      };
+    } else if (propExists("ヴィーガン・ベジタリアン")) {
+      properties["ヴィーガン・ベジタリアン"] = {
+        select: { name: finalVegan },
+      };
+    } else if (propExists("食事対応") && dietaryItems.length > 0) {
+      if (propType("食事対応") === "multi_select") {
+        properties["食事対応"] = {
+          multi_select: dietaryItems.map((d) => ({ name: d })),
+        };
+      }
+    }
+
+    // 公式サイト (Notionに列が存在する場合のみ)
     const finalWebsite = (website !== undefined ? website : place.website)?.trim();
-    if (finalWebsite) {
+    if (finalWebsite && propExists("公式サイト")) {
       properties["公式サイト"] = {
         url: finalWebsite,
       };
     }
 
-    // ヴィーガン (Notionの一本化プロパティ: '🌱 全てヴィーガン' | '🌱 ビーガン対応あり' | '未対応')
-    const finalVegan =
-      veganStatus || (place.isVegan ? "🌱 ビーガン対応あり" : "未対応");
-    properties["ヴィーガン"] = {
-      select: { name: finalVegan },
-    };
-
-    // ペット可 (checkbox)
-    properties["ペット可"] = {
-      checkbox: finalPetsAllowed,
-    };
-
-    // Latitude & Longitude (rich_text)
-    if (typeof place.latitude === "number") {
-      properties["Latitude"] = {
-        rich_text: [{ text: { content: String(place.latitude) } }],
-      };
-    }
-    if (typeof place.longitude === "number") {
-      properties["Longitude"] = {
-        rich_text: [{ text: { content: String(place.longitude) } }],
+    // ペット可 (Notionに列が存在する場合のみ)
+    if (propExists("ペット可")) {
+      properties["ペット可"] = {
+        checkbox: finalPetsAllowed,
       };
     }
 
-    // Google評価 (number)
-    if (typeof place.googleRating === "number") {
+    // Google評価 (Notionに列が存在する場合のみ)
+    if (typeof place.googleRating === "number" && propExists("Google評価")) {
       properties["Google評価"] = {
         number: place.googleRating,
       };
     }
 
-    // クチコミ件数 (number)
-    if (typeof place.userRatingCount === "number") {
+    // クチコミ件数 (Notionに列が存在する場合のみ)
+    if (typeof place.userRatingCount === "number" && propExists("クチコミ件数")) {
       properties["クチコミ件数"] = {
         number: place.userRatingCount,
       };
     }
 
-    // 営業状況 (select)
-    let statusName = "🟢 存続";
-    if (place.businessStatus === "CLOSED_PERMANENTLY") {
-      statusName = "🔴 閉業 (CLOSED)";
-    } else if (place.businessStatus === "CLOSED_TEMPORARILY") {
-      statusName = "🟡 一時休業";
+    // 営業状況 (Notionに列が存在する場合のみ)
+    if (propExists("営業状況")) {
+      let statusName = "🟢 存続";
+      if (place.businessStatus === "CLOSED_PERMANENTLY") {
+        statusName = "🔴 閉業 (CLOSED)";
+      } else if (place.businessStatus === "CLOSED_TEMPORARILY") {
+        statusName = "🟡 一時休業";
+      }
+      properties["営業状況"] = {
+        select: { name: statusName },
+      };
     }
-    properties["営業状況"] = {
-      select: { name: statusName },
-    };
 
-    // 店舗形態 (select)
-    const finalChain = chainType || place.chainType || "個人店・単独店";
-    properties["店舗形態"] = {
-      select: { name: finalChain },
-    };
+    // 店舗形態 (Notionに列が存在する場合のみ)
+    if (propExists("店舗形態")) {
+      const finalChain = chainType || place.chainType || "個人店・単独店";
+      properties["店舗形態"] = {
+        select: { name: finalChain },
+      };
+    }
 
-    // 最新クチコミ日 (date)
-    if (place.latestReviewDate) {
+    // 最新クチコミ日 (Notionに列が存在する場合のみ)
+    if (place.latestReviewDate && propExists("最新クチコミ日")) {
       properties["最新クチコミ日"] = {
         date: { start: place.latestReviewDate },
       };
     }
 
-    // 最終同期日 (date: 登録日 = 今日のJST日付 YYYY-MM-DD)
-    const todayJST = new Intl.DateTimeFormat("ja-JP", {
-      timeZone: "Asia/Tokyo",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    })
-      .format(new Date())
-      .replace(/\//g, "-");
+    // 最終同期日 (Notionに列が存在する場合のみ)
+    if (propExists("最終同期日")) {
+      const todayJST = new Intl.DateTimeFormat("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+        .format(new Date())
+        .replace(/\//g, "-");
 
-    properties["最終同期日"] = {
-      date: { start: todayJST },
-    };
+      properties["最終同期日"] = {
+        date: { start: todayJST },
+      };
+    }
 
     // Notion APIリクエスト
     const payload: any = {
@@ -410,51 +488,72 @@ export async function POST(request: Request) {
       };
     }
 
-    let notionRes = await fetch("https://api.notion.com/v1/pages", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${notionToken}`,
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    // リトライループ（万一Notionエラーが返った場合、原因プロパティを自動除外・補正して再試行）
+    let notionRes: Response | null = null;
+    let maxRetries = 4;
 
-    // もし Notion 側のエラー（ジャンルやペット可など）が発生した場合の自動リトライ
-    if (!notionRes.ok) {
-      const firstErr = await notionRes.text();
-      let retry = false;
-      if (firstErr.includes("ジャンル") || firstErr.includes("select") || firstErr.includes("validation_error")) {
-        console.log("Retrying Notion page creation with select property for ジャンル...");
-        payload.properties["ジャンル"] = {
-          select: { name: primaryGenre },
-        };
-        retry = true;
+    while (maxRetries > 0) {
+      maxRetries--;
+      notionRes = await fetch("https://api.notion.com/v1/pages", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${notionToken}`,
+          "Notion-Version": "2022-06-28",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (notionRes.ok) {
+        break;
       }
-      if (firstErr.includes("ペット可")) {
-        console.log("Retrying Notion page creation without ペット可 property...");
-        delete payload.properties["ペット可"];
-        retry = true;
+
+      const errText = await notionRes.text();
+      console.warn(`Notion page creation attempt failed (retries left: ${maxRetries}):`, errText);
+
+      // ジャンルの型不一致エラー（multi_select <-> select）の自動補正
+      if (errText.includes("ジャンル") && (errText.includes("select") || errText.includes("multi_select"))) {
+        if (payload.properties["ジャンル"]?.multi_select) {
+          payload.properties["ジャンル"] = { select: { name: primaryGenre } };
+        } else {
+          payload.properties["ジャンル"] = { multi_select: finalGenres.map((g) => ({ name: g })) };
+        }
+        continue;
       }
-      if (retry) {
-        notionRes = await fetch("https://api.notion.com/v1/pages", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${notionToken}`,
-            "Notion-Version": "2022-06-28",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+
+      // 「[プロパティ名] is not a property that exists」エラーを自動検出して除外
+      const notFoundMatch = errText.match(/`?([^\s`]+)`?\s+is not a property that exists/i);
+      if (notFoundMatch && notFoundMatch[1]) {
+        const badProp = notFoundMatch[1];
+        console.log(`Auto-removing non-existent property from payload: ${badProp}`);
+        delete payload.properties[badProp];
+        continue;
       }
-      if (!notionRes.ok) {
-        const errText = await notionRes.text();
-        console.error("Notion page creation error:", notionRes.status, errText);
-        return NextResponse.json(
-          { error: `Notion登録エラー (${notionRes.status}): ${errText}` },
-          { status: notionRes.status }
-        );
+
+      // その他のプロパティエラー（特定プロパティのバリデーション失敗）の自動除外
+      let removedAny = false;
+      for (const key of Object.keys(payload.properties)) {
+        if (key !== "名前" && errText.includes(key)) {
+          console.log(`Auto-removing failing property: ${key}`);
+          delete payload.properties[key];
+          removedAny = true;
+          break;
+        }
       }
+
+      if (!removedAny) {
+        // 原因プロパティが特定できない場合はループを終了
+        break;
+      }
+    }
+
+    if (!notionRes || !notionRes.ok) {
+      const finalErrText = notionRes ? await notionRes.text() : "不明なエラー";
+      console.error("Notion page creation error:", notionRes?.status, finalErrText);
+      return NextResponse.json(
+        { error: `Notion登録エラー (${notionRes?.status}): ${finalErrText}` },
+        { status: notionRes?.status || 500 }
+      );
     }
 
     const createdPage = await notionRes.json();
